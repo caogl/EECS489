@@ -342,7 +342,7 @@ main(int argc, char *argv[])
   struct hostent *phost;                              // the FQDN of this host
   struct sockaddr_in self;                            // the address of this host
 
-  int npeers;                                         // number of peers joined to this peer
+  int npeers;                                         // number of peers connecting to from this peer
   pte_t pte[PR_MAXPEERS], redirected;                 // a 2-entry peer table
   char pnamebuf[PR_MAXPEERS*PR_MAXFQDN] = { 0 };      // space to hold 2 FQDNs 
   char *pname[PR_MAXPEERS];                           // pointers to above spaces
