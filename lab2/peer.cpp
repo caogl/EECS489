@@ -135,29 +135,37 @@ peer_args(int argc, char *argv[], char *pname, u_short *port)
 int
 peer_setup(u_short port)
 {
-  
-  /* Task 1: YOUR CODE HERE 
+  /* Task 1: YOUR CODE HERE
    * Fill out the rest of this function.
    */
   /* create a TCP socket, store the socket descriptor in "sd" */
   /* YOUR CODE HERE */
-
+  int sd;
+  struct sockaddr_in self;
+ 
+  sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+ 
   /* initialize socket address */
   memset((char *) &self, 0, sizeof(struct sockaddr_in));
   self.sin_family = AF_INET;
   self.sin_addr.s_addr = INADDR_ANY;
   self.sin_port = port; // in network byte order
-
+ 
   /* reuse local address so that bind doesn't complain
      of address already in use. */
   /* YOUR CODE HERE */
-
+  int on = 1;
+  setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+ 
   /* bind address to socket */
   /* YOUR CODE HERE */
-
+  bind(sd, (struct sockaddr *)&self, sizeof(struct sockaddr_in));
+ 
+ 
   /* listen on socket */
   /* YOUR CODE HERE */
-
+  listen(sd, PR_QLEN);
+ 
   /* return socket id. */
   return (sd);
 }
@@ -182,10 +190,17 @@ peer_accept(int sd, pte_t *pte)
      peer in the "peer" variable. Also store the socket descriptor
      returned by accept() in the pte */
   /* YOUR CODE HERE */
-
+  int len = sizeof(struct sockaddr_in);
+  int td = accept(sd, (struct sockaddr *)&peer, (socklen_t *)&len);
+  pte->pte_sd = td;
+ 
   /* make the socket wait for PR_LINGER time unit to make sure
      that all data sent has been delivered when closing the socket */
   /* YOUR CODE HERE */
+  struct linger linger_time;
+  linger_time.l_onoff = 1;
+  linger_time.l_linger = PR_LINGER;
+  setsockopt(td, SOL_SOCKET, SO_LINGER, &linger_time, sizeof(linger_time));
 
   /* store peer's address+port# in pte */
   memcpy((char *) &pte->pte_peer.peer_addr, (char *) &peer.sin_addr, 
@@ -217,11 +232,28 @@ peer_ack(int td, char type, peer_t *peer)
    * Marshall together a message of type pmsg_t.
   */
   /* YOUR CODE HERE */
-  
+  pmsg_t msg;
+  msg.pm_vers = PM_VERS;
+  msg.pm_type = type;
+  if(peer)
+  {
+    msg.pm_npeers = htons(1);
+    memcpy((char*)&msg.pm_peer.peer_addr, (char*) &peer->peer_addr, sizeof(struct in_addr)); // copy address
+    msg.pm_peer.peer_port = peer->peer_port; // copy port
+  }
+  else
+  {
+    msg.pm_npeers = 0;
+  }
+ 
   /* send msg to peer connected at socket td,
      close the socket td upon error in sending */
   /* YOUR CODE HERE */
-  
+  err = send(td, &msg, sizeof(pmsg_t), 0);
+  if(err<= 0)
+  {
+    close(td);
+  }
   return(err);
 }
 
@@ -238,23 +270,36 @@ peer_ack(int td, char type, peer_t *peer)
 int
 peer_connect(pte_t *pte)
 {
-
+  int err;
   /* Task 2: YOUR CODE HERE
    * Fill out the rest of this function.
   */
   /* create a new TCP socket, store the socket in the pte */
   /* YOUR CODE HERE */
+  pte->pte_sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
   /* reuse local address so that the call to bind in peer_setup(), to
      bind to the same ephemeral address, doesn't complain of address
      already in use. */
   /* YOUR CODE HERE */
+  int on =1;
+  setsockopt(pte->pte_sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
   /* initialize socket address with destination peer's IPv4 address and port number . */
   /* YOUR CODE HERE */
+  struct sockaddr_in server;
+  memset((char *)&server, 0, sizeof(struct sockaddr_in));
+  server.sin_family = AF_INET;
+  server.sin_port = pte->pte_peer.peer_port;
+  memcpy(&server.sin_addr, &pte->pte_peer.peer_addr, sizeof(struct in_addr));
 
   /* connect to destination peer. */
   /* YOUR CODE HERE */
+  if(connect(pte->pte_sd, (struct sockaddr *)&server, sizeof(struct sockaddr_in))<0)
+  {
+    perror("error in connecting");
+    exit(1);
+  }
 
   return(err);
 }  
@@ -278,7 +323,13 @@ peer_recv(int td, pmsg_t *msg)
    * memory pointed to by "msg"
   */
   /* YOUR CODE HERE */
-
+  int status = recv(td, msg, sizeof(pmsg_t), 0);
+  if(status<=0){
+    close(td);
+    return status;
+  }
+ 
+  msg->pm_npeers = ntohs(msg->pm_npeers);
   return (sizeof(pmsg_t));
 }
 
@@ -322,8 +373,8 @@ main(int argc, char *argv[])
 #endif
 
   /* if pname is provided, connect to peer */
-  if (*pname[0]) {
-
+  if (*pname[0]) 
+  {
     pte[0].pte_pname = pname[0];
 
     /* Task 2: YOUR CODE HERE
@@ -333,7 +384,9 @@ main(int argc, char *argv[])
      * of the peer table (pte[0]).
     */
     /* YOUR CODE HERE */
-
+    struct hostent *sp;
+    sp = gethostbyname(pname[0]);
+    memcpy(&pte[0].pte_peer.peer_addr, sp->h_addr, sp->h_length);
     /* connect to peer in pte[0] */
     peer_connect(pte);  // Task 2: fill in the peer_connect() function above
 
@@ -346,6 +399,8 @@ main(int argc, char *argv[])
      * peer's address).
     */
     /* YOUR CODE HERE */
+    int len = sizeof(struct sockaddr_in);
+    getsockname(pte[0].pte_sd, (struct sockaddr *)&self, (socklen_t *)&len);
     
     npeers++;
 
@@ -365,6 +420,10 @@ main(int argc, char *argv[])
        (along with peer's address) by copying the same chunk of code
        you just wrote at the end of the if statement block above. */
     /* YOUR CODE HERE */
+    struct sockaddr_in ephemeral;
+    int len = sizeof(struct sockaddr_in);
+    getsockname(sd, (struct sockaddr *)&ephemeral, (socklen_t *)&len);
+    self.sin_port = ephemeral.sin_port;
   }
   
   /* Task 1: YOUR CODE HERE
@@ -372,7 +431,7 @@ main(int argc, char *argv[])
      space to put the name). Use gethostname(), it is sufficient most
      of the time. */
   /* YOUR CODE HERE */
-
+  gethostname(pname[1], PR_MAXFQDN);
   /* inform user which port this peer is listening on */
   fprintf(stderr, "This peer address is %s:%d\n",
           pname[1], ntohs(self.sin_port));
@@ -399,9 +458,14 @@ main(int argc, char *argv[])
        Call select() to wait for any activity on any of the above
        descriptors. */
     /* YOUR CODE HERE */
+    struct timeval t_value;
+    t_value.tv_sec = 2;
+    t_value.tv_usec = 500000;
+    select(maxsd+1, &rset, NULL, NULL, &t_value); 
 
 #ifndef _WIN32
-    if (FD_ISSET(STDIN_FILENO, &rset)) {
+    if (FD_ISSET(STDIN_FILENO, &rset)) 
+    {
       // user input: if getchar() returns EOF or if user hits q, quit,
       // else flush input and go back to waiting
       if (((c = getchar()) == EOF) || (c == 'q') || (c == 'Q')) {
@@ -412,9 +476,11 @@ main(int argc, char *argv[])
     }
 #endif
 
-    if (FD_ISSET(sd, &rset)) {
+    if (FD_ISSET(sd, &rset)) 
+    {
       // a connection is made to this host at the listened to socket
-      if (npeers < PR_MAXPEERS) {
+      if (npeers < PR_MAXPEERS) 
+      {
         /* Peer table is not full.  Accept the peer, send a welcome
          * message.  if we are connected to another peer, also sends
          * back the peer's address+port#
@@ -441,7 +507,9 @@ main(int argc, char *argv[])
         
         npeers++;
 
-      } else {
+      } 
+      else
+      {
         // Peer table full.  Accept peer, send a redirect message.
         // Task 1: the functions peer_accept() and peer_ack() you wrote
         //         must work without error in this case also.
