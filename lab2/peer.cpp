@@ -337,16 +337,16 @@ int
 main(int argc, char *argv[])
 {
   char c;
-  fd_set rset;
+  fd_set rset;                                        // the prelaunched set to manage by select()
   int i, err, sd, maxsd;
   struct hostent *phost;                              // the FQDN of this host
   struct sockaddr_in self;                            // the address of this host
 
-  int npeers;
+  int npeers;                                         // number of peers joined to this peer
   pte_t pte[PR_MAXPEERS], redirected;                 // a 2-entry peer table
-  char pnamebuf[PR_MAXPEERS*PR_MAXFQDN] = { 0 };  // space to hold 2 FQDNs 
+  char pnamebuf[PR_MAXPEERS*PR_MAXFQDN] = { 0 };      // space to hold 2 FQDNs 
   char *pname[PR_MAXPEERS];                           // pointers to above spaces
-  pmsg_t msg;
+  pmsg_t msg;                                         // the message to send
 
   // init
   npeers=0;
