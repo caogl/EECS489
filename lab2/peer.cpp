@@ -270,7 +270,6 @@ peer_ack(int td, char type, peer_t *peer)
 int
 peer_connect(pte_t *pte)
 {
-  int err;
   /* Task 2: YOUR CODE HERE
    * Fill out the rest of this function.
   */
@@ -301,7 +300,7 @@ peer_connect(pte_t *pte)
     exit(1);
   }
 
-  return(err);
+  return 0;
 }  
   
 /*
