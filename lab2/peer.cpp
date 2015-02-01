@@ -401,7 +401,7 @@ main(int argc, char *argv[])
     /* YOUR CODE HERE */
     int len = sizeof(struct sockaddr_in);
     getsockname(pte[0].pte_sd, (struct sockaddr *)&self, (socklen_t *)&len);
-    
+    // getsockname() returns the current address to which the socket is bound, copy the addr to second arg
     npeers++;
 
     /* inform user of connection to peer */
