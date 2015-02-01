@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
   
   netimg_sockinit(sname, port);  // Task 1
 
-  if (netimg_sendqry(imagename, vers)) {
+  if (netimg_sendqry(imagename, vers)) { // Task 1
     err = netimg_recvimsg();  // Task 1
 
     if (err == NETIMG_FOUND) { // if image received ok
