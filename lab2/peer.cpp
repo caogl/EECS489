@@ -405,10 +405,6 @@ main(int argc, char *argv[])
 
     /* set all the descriptors to select() on */
     FD_ZERO(&rset);
-#ifndef _WIN32
-    FD_SET(STDIN_FILENO, &rset); // wait for input from std input,
-        // Winsock only works with socket and stdin is not a socket
-#endif
     FD_SET(sd, &rset);           // or the listening socket,
     for (i = 0; i < PR_MAXPEERS; i++) 
     {
@@ -426,20 +422,6 @@ main(int argc, char *argv[])
     t_value.tv_sec = 2;
     t_value.tv_usec = 500000;
     select(maxsd+1, &rset, NULL, NULL, &t_value); 
-
-#ifndef _WIN32
-    if (FD_ISSET(STDIN_FILENO, &rset)) 
-    {
-      // user input: if getchar() returns EOF or if user hits q, quit,
-      // else flush input and go back to waiting
-      if (((c = getchar()) == EOF) || (c == 'q') || (c == 'Q')) 
-      {
-        fprintf(stderr, "Bye!\n");
-        break;
-      }
-      fflush(stdin);
-    }
-#endif
 
     if (FD_ISSET(sd, &rset)) 
     {
