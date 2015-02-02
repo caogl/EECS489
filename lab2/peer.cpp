@@ -1,29 +1,6 @@
-/* 
- * Copyright (c) 2014 University of Michigan, Ann Arbor.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of Michigan, Ann Arbor. The name of the University 
- * may not be used to endorse or promote products derived from this 
- * software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- * Author: Sugih Jamin (jamin@eecs.umich.edu)
-*/
 #include <stdio.h>         // fprintf(), perror(), fflush()
 #include <stdlib.h>        // atoi()
 #include <assert.h>        // assert()
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>      // socklen_t
-#include "wingetopt.h"
-#else
 #include <string.h>        // memset(), memcmp(), strlen(), strcpy(), memcpy()
 #include <unistd.h>        // getopt(), STDIN_FILENO, gethostname()
 #include <signal.h>        // signal()
@@ -33,12 +10,6 @@
 #include <sys/types.h>     // u_short
 #include <sys/socket.h>    // socket API, setsockopt(), getsockname()
 #include <sys/select.h>    // select(), FD_*
-#endif
-
-#ifdef _WIN32
-#define close(sockdesc) closesocket(sockdesc)
-#define perror(errmsg) { fprintf(stderr, "%s: %d\n", (errmsg), WSAGetLastError()); }
-#endif
 
 #define net_assert(err, errmsg) { if ((err)) { perror(errmsg); assert(!(err)); } }
 
@@ -323,7 +294,8 @@ peer_recv(int td, pmsg_t *msg)
   */
   /* YOUR CODE HERE */
   int status = recv(td, msg, sizeof(pmsg_t), 0);
-  if(status<=0){
+  if(status<=0)
+  {
     close(td);
     return status;
   }
@@ -350,26 +322,15 @@ main(int argc, char *argv[])
   // init
   npeers=0;
   memset((char *) &self, 0, sizeof(struct sockaddr_in));
-  for (i=0; i < PR_MAXPEERS; i++) {
+  for (i=0; i < PR_MAXPEERS; i++) 
+  {
     pname[i] = &pnamebuf[i*PR_MAXFQDN];
     pte[i].pte_sd = PR_UNINIT_SD;
   }
   
   // parse args, see the comments for peer_args()
-  if (peer_args(argc, argv, pname[0], &pte[0].pte_peer.peer_port)) {
+  if (peer_args(argc, argv, pname[0], &pte[0].pte_peer.peer_port))
     peer_usage(argv[0]);
-  }
-
-#ifdef _WIN32
-  WSADATA wsa;
-  
-  err = WSAStartup(MAKEWORD(2,2), &wsa);  // winsock 2.2
-  net_assert(err, "peer: WSAStartup");
-#endif
-  
-#ifndef _WIN32
-  signal(SIGPIPE, SIG_IGN);    /* don't die if peer is dead */
-#endif
 
   /* if pname is provided, connect to peer */
   if (*pname[0]) 
@@ -410,7 +371,8 @@ main(int argc, char *argv[])
 
   /* setup and listen on connection */
   sd = peer_setup(self.sin_port);  // Task 1: fill in the peer_setup() function above
-  if (!self.sin_port) {
+  if (!self.sin_port) 
+  {
     /* Task 1: YOUR CODE HERE
        If a peer was not provided in the command line using "-p", the
        port number will be 0 and the socket sd would have been
@@ -435,7 +397,8 @@ main(int argc, char *argv[])
   fprintf(stderr, "This peer address is %s:%d\n",
           pname[1], ntohs(self.sin_port));
 
-  do {
+  while(1)
+  {
     /* determine the largest socket descriptor */
     maxsd = (sd > pte[0].pte_sd ? sd : pte[0].pte_sd);
     if (maxsd < pte[1].pte_sd) { maxsd = pte[1].pte_sd; }
@@ -447,8 +410,10 @@ main(int argc, char *argv[])
         // Winsock only works with socket and stdin is not a socket
 #endif
     FD_SET(sd, &rset);           // or the listening socket,
-    for (i = 0; i < PR_MAXPEERS; i++) {
-      if (pte[i].pte_sd > 0) {
+    for (i = 0; i < PR_MAXPEERS; i++) 
+    {
+      if (pte[i].pte_sd > 0) 
+      {
         FD_SET(pte[i].pte_sd, &rset);  // or the peer connected sockets
       }
     }
@@ -467,7 +432,8 @@ main(int argc, char *argv[])
     {
       // user input: if getchar() returns EOF or if user hits q, quit,
       // else flush input and go back to waiting
-      if (((c = getchar()) == EOF) || (c == 'q') || (c == 'Q')) {
+      if (((c = getchar()) == EOF) || (c == 'q') || (c == 'Q')) 
+      {
         fprintf(stderr, "Bye!\n");
         break;
       }
@@ -534,23 +500,30 @@ main(int argc, char *argv[])
       } 
     }
 
-    for (i = 0; i < PR_MAXPEERS; i++) {
-      if (pte[i].pte_sd > 0 && FD_ISSET(pte[i].pte_sd, &rset)) {
+    for (i = 0; i < PR_MAXPEERS; i++) 
+    {
+      if (pte[i].pte_sd > 0 && FD_ISSET(pte[i].pte_sd, &rset)) 
+      {
         // a message arrived from a connected peer, receive it
         err = peer_recv(pte[i].pte_sd, &msg); // Task 2: fill in the functions peer_recv() above
         net_assert((err < 0), "peer: peer_recv");
-        if (err == 0) {
+        if (err == 0) 
+        {
           // if connection closed by peer, reset peer table entry
           pte[i].pte_sd = PR_UNINIT_SD;
-        } else {
+        } 
+        else 
+        {
           // inform user
           fprintf(stderr, "Received ack from %s:%d\n", pte[i].pte_pname,
                   ntohs(pte[i].pte_peer.peer_port));
           
-          if (msg.pm_vers != PM_VERS) {
+          if (msg.pm_vers != PM_VERS) 
             fprintf(stderr, "unknown message version.\n");
-          } else {
-            if (msg.pm_npeers) {
+          else 
+          {
+            if (msg.pm_npeers) 
+            {
               // if message contains a peer address, inform user of
               // the peer two hops away
               phost = gethostbyaddr((char *) &msg.pm_peer.peer_addr,
@@ -561,7 +534,8 @@ main(int argc, char *argv[])
                       ntohs(msg.pm_peer.peer_port));
             }
             
-            if (msg.pm_type == PM_RDIRECT) {
+            if (msg.pm_type == PM_RDIRECT) 
+            {
               // inform user if message is a redirection
               fprintf(stderr, "Join redirected, try to connect to the peer above.\n");
               exit(1);
@@ -571,17 +545,13 @@ main(int argc, char *argv[])
       }
     }
 
-  } while (1);
-
-  for (i=0; i < PR_MAXPEERS; i++) {
-    if (pte[i].pte_sd != PR_UNINIT_SD) {
+  }
+  for (i=0; i < PR_MAXPEERS; i++) 
+  {
+    if (pte[i].pte_sd != PR_UNINIT_SD)
       close(pte[i].pte_sd);
-    }
   }
   close(sd);
 
-#ifdef _WIN32
-  WSACleanup();
-#endif
   exit(0);
 }
