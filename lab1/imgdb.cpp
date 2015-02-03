@@ -115,13 +115,6 @@ int imgdb_sockinit()
   struct sockaddr_in self;
   char sname[NETIMG_MAXFNAME+1] = { 0 };
 
-#ifdef _WIN32
-  WSADATA wsa;
-
-  err = WSAStartup(MAKEWORD(2,2), &wsa);  // winsock 2.2
-  net_assert(err, "imgdb: WSAStartup");
-#endif
-
   /* Task 2: YOUR CODE HERE
    * Fill out the rest of this function.
   */
@@ -329,10 +322,6 @@ int main(int argc, char *argv[])
   long img_size;
   char fname[NETIMG_MAXFNAME] = { 0 };
 
-#ifndef _WIN32
-  signal(SIGPIPE, SIG_IGN);    /* don't die if peer is dead */
-#endif
-
   sd = imgdb_sockinit();  // Task 2
   
   while (1) 
@@ -347,8 +336,5 @@ int main(int argc, char *argv[])
     close(td);
   }
 
-#ifdef _WIN32
-  WSACleanup();
-#endif
   exit(0);
 }
