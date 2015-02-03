@@ -290,25 +290,25 @@ int main(int argc, char *argv[])
   char vers;
 
   // parse args, see the comments for netimg_args()
-  if (netimg_args(argc, argv, &sname, &port, &imagename, &vers)) {
+  if (netimg_args(argc, argv, &sname, &port, &imagename, &vers)) 
     netimg_usage(argv[0]);
-  }
   
   netimg_sockinit(sname, port);  // Task 1
 
-  if (netimg_sendqry(imagename, vers)) { // Task 1
+  if (netimg_sendqry(imagename, vers)) 
+  { // Task 1
     err = netimg_recvimsg();  // Task 1
-
-    if (err == NETIMG_FOUND) { // if image received ok
+    if (err == NETIMG_FOUND) 
+    { // if image received ok
       netimg_glutinit(&argc, argv, netimg_recvimg);
       netimg_imginit();
       
       glutMainLoop(); /* start the GLUT main loop */
-    } else if (err == NETIMG_NFOUND) {
+    } 
+    else if (err == NETIMG_NFOUND)
       fprintf(stderr, "%s: %s image not found.\n", argv[0], imagename);
-    } else {
+    else 
       fprintf(stderr, "%s: image receive error %d.\n", argv[0], err);
-    }
   }
   
   return(0);
