@@ -55,10 +55,10 @@ void peer_usage(char *progname)
 bool check_join(vector<pte_t>& pte, vector<pte_t>& dte, peer_t& peer);
 int peer_args(int argc, char *argv[], char *pname, u_short& port, int& PR_MAXPEERS);
 int peer_setup(u_short port);
-int peer_accept(int sd, pte_t *pte);
+int peer_accept(int sd, pte_t &pte);
 int peer_ack(int td, vector<pte_t>& pte, char type);
-int peer_connect(pte_t& pte);
-int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS); // receive and reconnect
+int peer_connect(pte_t& pte, sockaddr_in& self);
+int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS, sockaddr_in& self); // receive and reconnect
 
 int main(int argc, char *argv[])
 {
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     struct hostent *sp;
     sp = gethostbyname(pnameTmp);
     memcpy(&pte[0].pte_peer.peer_addr, sp->h_addr, sp->h_length);
-    peer_connect(pte[0]);
+    peer_connect(pte[0], self);
     int len = sizeof(struct sockaddr_in);
     getsockname(pte[0].pte_sd, (struct sockaddr *)&self, (socklen_t *)&len); // copy the addr of socket to second arg
     fprintf(stderr, "Connected to peer %s:%d\n", pte[0].pte_pname, ntohs(pte[0].pte_peer.peer_port));
@@ -111,8 +111,7 @@ int main(int argc, char *argv[])
 
   memset(pnameTmp, '\0', PR_MAXFQDN+1);
   gethostname(pnameTmp, PR_MAXFQDN);
-  fprintf(stderr, "This peer address is %s:%d\n",pnameTmp, ntohs(self.sin_port));  /* inform user which port this peer is listening on */
-
+  fprintf(stderr, "This peer address is %s:%d\n",pnameTmp, ntohs(self.sin_port));  /* inform user which port this peer is  listening on */
   while(1)
   {
     /* determine the largest socket descriptor */
@@ -143,7 +142,7 @@ int main(int argc, char *argv[])
       if (pSize<PR_MAXPEERS) // if peer table is not full, welcome
       {
         pte_t pteTmp;
-        peer_accept(sd, &pteTmp);
+        peer_accept(sd, pteTmp);
         err=peer_ack(pteTmp.pte_sd, pte, PM_WELCOME);
         net_assert(err<=0, "peer: peer_ack welcome");
         pte.push_back(pteTmp);
@@ -157,7 +156,7 @@ int main(int argc, char *argv[])
       } 
       else // if peer table is full, redirect
       {
-        peer_accept(sd, &redirected);
+        peer_accept(sd, redirected);
         err=peer_ack(redirected.pte_sd, pte, PM_RDIRECT);
         net_assert(err<=0, "peer: peer_ack redirect");
         phost = gethostbyaddr((char *) &redirected.pte_peer.peer_addr, sizeof(struct in_addr), AF_INET);
@@ -174,7 +173,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<n; i++) 
     {
       if (pte[i].pte_sd > 0 && FD_ISSET(pte[i].pte_sd, &rset))   
-        peer_recv(packet, pte, dte, i, PR_MAXPEERS);
+        peer_recv(packet, pte, dte, i, PR_MAXPEERS, self);
     }
 
   }
@@ -260,26 +259,24 @@ int peer_setup(u_short port)
   return (sd);
 }
 
-int peer_accept(int sd, pte_t *pte)
+int peer_accept(int sd, pte_t& pte)
 {
   struct sockaddr_in peer;
-  
+
   int len = sizeof(struct sockaddr_in);
   int td = accept(sd, (struct sockaddr *)&peer, (socklen_t *)&len);
-  cout<<"Attention here: "<<ntohs(peer.sin_port)<<endl;
-  cout<<"Attention here: "<<(peer.sin_port)<<endl;
-  pte->pte_sd = td;
+  pte.pte_sd = td;
  
   struct linger linger_time;
   linger_time.l_onoff = 1;
   linger_time.l_linger = PR_LINGER;
   setsockopt(td, SOL_SOCKET, SO_LINGER, &linger_time, sizeof(linger_time));
 
-  memcpy((char *) &pte->pte_peer.peer_addr, (char *) &peer.sin_addr, 
+  memcpy((char *) &pte.pte_peer.peer_addr, (char *) &peer.sin_addr, 
          sizeof(struct in_addr));
-  pte->pte_peer.peer_port = peer.sin_port; /* stored in network byte order */
+  pte.pte_peer.peer_port = peer.sin_port; /* stored in network byte order */
 
-  return (pte->pte_sd);
+  return (pte.pte_sd);
 }
 
 int peer_ack(int td, vector<pte_t>& pte, char type)
@@ -309,14 +306,15 @@ int peer_ack(int td, vector<pte_t>& pte, char type)
   return(err);
 }
 
-int peer_connect(pte_t& pte)
+int peer_connect(pte_t& pte, sockaddr_in& self)
 {
-  //cout<<"connnnnnnnnnnecting "<<endl;
   pte.pte_sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  pte.pending=true;
   int on =1;
+
   setsockopt(pte.pte_sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
   setsockopt(pte.pte_sd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+  bind(pte.pte_sd, (struct sockaddr *) &self, sizeof(struct sockaddr_in));
+  pte.pending=true;
 
   struct sockaddr_in server;
   memset((char *)&server, 0, sizeof(struct sockaddr_in));
@@ -333,9 +331,8 @@ int peer_connect(pte_t& pte)
   return 0;
 }  
   
-int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS) // receive and reconnect
+int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS, sockaddr_in& self) // receive and reconnect
 {
-  //cout<<"hahahahahahahahahaha	"<<i<<endl;
   int status = recv(pte[i].pte_sd, packet, sizeof(pmsg_t)+5*sizeof(peer_t), 0);
   if(status<0)
   {
@@ -386,18 +383,18 @@ int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int P
           memcpy(&peer, packet+sizeof(msg)+(i-1)*sizeof(peer), sizeof(peer));
           if(n<PR_MAXPEERS && check_join(pte, dte, peer)) // if the peer can join the table
           {
-            cout<<"port number is: "<<ntohs(peer.peer_port)<<endl;
-
             pte_t pteTmp;
             pte.push_back(pteTmp);
             pte.back().pte_pname=new char[PR_MAXFQDN+1];
+            pte.back().pte_peer.peer_port=peer.peer_port;
             memset(pte.back().pte_pname, '\0', PR_MAXFQDN+1);
-            memcpy(&pte.back().pte_peer, &peer, sizeof(peer_t));
-            
-            peer_connect(pte.back());
-
             struct hostent* phost = gethostbyaddr((char *) &peer.peer_addr, sizeof(struct in_addr), AF_INET);
             strcpy(pte.back().pte_pname, ((phost && phost->h_name) ? phost->h_name: inet_ntoa(pte.back().pte_peer.peer_addr)));
+            memcpy(&pte.back().pte_peer.peer_addr, phost->h_addr, phost->h_length);
+            //memcpy(&pte.back().pte_peer, &peer, sizeof(peer_t));
+            
+            peer_connect(pte.back(), self);
+
           }    
         }
       }      
