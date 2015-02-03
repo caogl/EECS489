@@ -117,13 +117,6 @@ int netimg_args(int argc, char *argv[], char **sname, u_short *port, char **imag
  */
 void netimg_sockinit(char *sname, u_short port)
 {
-#ifdef _WIN32
-  WSADATA wsa;
-  
-  err = WSAStartup(MAKEWORD(2,2), &wsa);  // winsock 2.2
-  net_assert(err, "netimg: WSAStartup");
-#endif
-
   sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if(sd<0)
   {
@@ -300,10 +293,6 @@ int main(int argc, char *argv[])
   if (netimg_args(argc, argv, &sname, &port, &imagename, &vers)) {
     netimg_usage(argv[0]);
   }
-
-#ifndef _WIN32
-  signal(SIGPIPE, SIG_IGN);    /* don't die if peer is dead */
-#endif
   
   netimg_sockinit(sname, port);  // Task 1
 
