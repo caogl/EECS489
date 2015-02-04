@@ -22,6 +22,7 @@
 #define PM_VERS      0x1
 #define PM_WELCOME   0x1    // Welcome peer
 #define PM_RDIRECT   0x2    // Redirect per
+#define PM_SEARCH    0X4    // Search packet
 
 #include "ltga.h"
 #include "netimg.h"
