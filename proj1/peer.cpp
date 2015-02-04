@@ -22,6 +22,9 @@
 #define PM_VERS      0x1
 #define PM_WELCOME   0x1    // Welcome peer
 #define PM_RDIRECT   0x2    // Redirect per
+
+#include "ltga.h"
+#include "netimg.h"
 using namespace std;
 
 typedef struct {            // peer address structure
@@ -58,16 +61,29 @@ int peer_setup(u_short port);
 int peer_accept(int sd, pte_t &pte);
 int peer_ack(int td, vector<pte_t>& pte, char type);
 int peer_connect(pte_t& pte, sockaddr_in& self);
-int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS, sockaddr_in& self); // receive and reconnect
+int peer_recv(char* packet, vector<pte_t>& pte, vector<pte_t>& dte, int i, int PR_MAXPEERS, sockaddr_in& self);
+int imgdb_loadimg(char *fname, LTGA *image, imsg_t *imsg, long *img_size);
+int imgdb_sockinit();
+int imgdb_accept(int sd);
+void imgdb_recvqry(int td, char *fname);
+void imgdb_sendimg(int td, imsg_t *imsg, LTGA *image, long img_size);
 
 int main(int argc, char *argv[])
 {
+  /* peer socket */
   fd_set rset;                                        // the prelaunched set to manage by select()
   int maxsd, err, sd;
   struct hostent *phost;                              // the FQDN of this host
   struct sockaddr_in self;                            // the address of this host
   int PR_MAXPEERS=6;                                  // if not specified by command line argument, default to be 6
 
+  /* image socket */
+  int sd_img, td_img;
+  LTGA image;
+  imsg_t imsg;
+  long img_size;
+  char fname[NETIMG_MAXFNAME] = { 0 };
+    
   char pnameTmp[PR_MAXFQDN];
   memset(pnameTmp, '\0', sizeof(pnameTmp));
   u_short peer_portTmp;
@@ -99,8 +115,10 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Connected to peer %s:%d\n", pte[0].pte_pname, ntohs(pte[0].pte_peer.peer_port));
   }
 
-  /* setup and listen on connection */
-  sd = peer_setup(self.sin_port);  // Task 1: fill in the peer_setup() function above
+  /* setup the server socket */
+  sd = peer_setup(self.sin_port);  // peer socket
+  sd_img=imgdb_sockinit();         // image socket
+
   if (!self.sin_port) 
   {
     struct sockaddr_in ephemeral;
@@ -111,18 +129,20 @@ int main(int argc, char *argv[])
 
   memset(pnameTmp, '\0', PR_MAXFQDN+1);
   gethostname(pnameTmp, PR_MAXFQDN);
-  fprintf(stderr, "This peer address is %s:%d\n",pnameTmp, ntohs(self.sin_port));  /* inform user which port this peer is  listening on */
+  fprintf(stderr, "Peering socket address %s:%d\n",pnameTmp, ntohs(self.sin_port));  /* peer server socket address */
+
   while(1)
   {
     /* determine the largest socket descriptor */
-    maxsd=sd;
+    maxsd=max(sd, sd_img);
     int pSize=pte.size();
     for(int i=0; i<pSize; i++)
       maxsd=max(maxsd, pte[i].pte_sd);
 
     /* set all the descriptors to select() on */
     FD_ZERO(&rset);
-    FD_SET(sd, &rset);           // add the listening socket into the set
+    FD_SET(sd, &rset);           // add the peer socket into the set
+    FD_SET(sd_img, &rset);       // add the image socket into the set
     int n=pte.size();
     for(int i = 0; i < n; i++) 
     {
@@ -135,7 +155,7 @@ int main(int argc, char *argv[])
     t_value.tv_usec = 500000;
     select(maxsd+1, &rset, NULL, NULL, &t_value); 
 
-    /* if the listening socket sd is ready to recv */
+    /* if the listening peer socket sd is ready to recv */
     if (FD_ISSET(sd, &rset)) 
     {
       int pSize=pte.size();
@@ -166,6 +186,18 @@ int main(int argc, char *argv[])
 
         close(redirected.pte_sd);
       } 
+    }
+    
+    /* if the listening image socket sd is ready to recv */
+    if(FD_ISSET(sd_img, &rset))
+    {
+      td_img = imgdb_accept(sd_img); // Task 2
+      imgdb_recvqry(td_img, fname); // Task 2
+      if(imgdb_loadimg(fname, &image, &imsg, &img_size) == NETIMG_FOUND)
+        imgdb_sendimg(td_img, &imsg, &image, img_size); // Task 2
+      else
+        imgdb_sendimg(td_img, &imsg, NULL, 0);
+      close(td_img);
     }
 
     /* if the client socket is ready to receive */
