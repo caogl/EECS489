@@ -78,7 +78,10 @@ int
 ID_inrange(unsigned char ID, unsigned char begin, unsigned char end)
 {
   /* YOUR CODE HERE */
-  return(0);
+  //1. when begin == end --> whole range
+  //2. when begin < end
+  //3. when begin > end 
+  return ((begin == end)||(begin< ID && ID<= end) ||(begin > end &&(begin<ID || ID<= end)));
 }
 
 /*
