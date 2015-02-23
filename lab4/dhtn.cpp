@@ -484,28 +484,9 @@ main(int argc, char *argv[])
     FD_ZERO(&rset);
     FD_SET(node.dhtn_imgdb.sd, &rset);
     FD_SET(node.sd, &rset);
-#ifndef _WIN32
-    FD_SET(STDIN_FILENO, &rset); // wait for input from std input,
-    // Winsock only works with socket and stdin is not a socket
-#endif
-    
+
     err = select(maxsd+1, &rset, 0, 0, 0);
     net_assert((err <= 0), "dhtn: select error");
-    
-#ifndef _WIN32
-    if (FD_ISSET(STDIN_FILENO, &rset)) {
-      // user input: if getchar() returns EOF or if user hits q, quit,
-      // if user hits 'p', prints out node's, successor's, and
-      // predecessor's IDs, flushes input.
-      if (((c = getchar()) == EOF) || (c == 'q') || (c == 'Q')) {
-        fprintf(stderr, "Bye!\n");
-        return(0);
-      } else if (c == 'p') {
-        node.printIDs();
-      }
-      fflush(stdin);
-    }
-#endif
     
     if (FD_ISSET(node.sd, &rset)) {
       node.handlepkt();
@@ -515,9 +496,6 @@ main(int argc, char *argv[])
       node.dhtn_imgdb.handleqry();
     }
   } while(1);
-  
-#ifdef _WIN32
-  WSACleanup();
-#endif
+
   exit(0);
 }
