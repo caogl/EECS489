@@ -251,7 +251,38 @@ forward(unsigned char id, dhtmsg_t *dhtmsg, int size)
      call to recv() returns 0.
   */
   /* YOUR CODE HERE */
+  //int sd;
+  int err;  int bytes = 0;
+  dhtmsg_t tmp;
 
+  if (ID_inrange(id, self.dhtn_ID, finger[0].dhtn_ID)){
+    dhtmsg->dhtm_type |= DHTM_ATLOC;
+  }
+  sd = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
+  err = send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+  fprintf(stderr, "Forwarding packet %d\n", finger[0].dhtn_ID);
+
+  while (1){
+    err = recv(sd, (char *) &tmp+bytes, sizeof(dhtmsg_t), 0);
+    if (err <= 0){
+      close(sd);
+      break;
+    }
+    
+    bytes += err;
+    if (bytes < (int) sizeof(dhtmsg_t)){
+      continue;
+    }
+    close(sd);
+
+    bytes = 0; 
+    finger[0] = tmp.dhtm_node;
+
+    sd = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
+    err = send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+    net_assert((err != sizeof(dhtmsg_t)), "dhtn::forward error"); 
+    fprintf(stderr, "Forwarding packet %d\n", finger[0].dhtn_ID);
+  }
   return;
 }
 
@@ -272,6 +303,7 @@ handlejoin(int td, dhtmsg_t *dhtmsg)
      self.  If so, send back to joining node a REID message.  See
      dhtn.h for packet format.
   */
+  
   /* Otherwise, next check if ID is in range (finger[DHTN_FINGERS].dhtn_ID,
      self.dhtn_ID].  If so, send a welcome message to joining node,
      with the current node as the joining node's successor and the
@@ -312,6 +344,44 @@ handlejoin(int td, dhtmsg_t *dhtmsg)
      Don't forget to close the sender socket when you don't need it anymore.
   */
   /* YOUR CODE HERE */
+  int ID = dhtmsg->dhtm_node.dhtn_ID;
+  
+  if(self.dhtn_ID == ID || finger[DHTN_FINGERS].dhtn_ID == ID){
+    close(td);
+    sd = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
+    dhtmsg->dhtm_type = DHTM_REID;
+    send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+    close(sd);
+  }
+  else if (ID_inrange(ID, finger[DHTN_FINGERS].dhtn_ID, self.dhtn_ID)){
+    close(td);
+    dhtnode_t tmp = dhtmsg->dhtm_node;
+    sd = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
+    
+
+    dhtmsg->dhtm_type = DHTM_WLCM;
+
+    memcpy((char *) &dhtmsg->dhtm_node, (char *) &self, sizeof(dhtnode_t)); 
+    send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0); //send new dhtmsg with new successor updated.
+    send(sd, (char*) &finger[DHTN_FINGERS], sizeof(dhtnode_t), 0); //
+
+    close(sd);
+    
+    finger[DHTN_FINGERS] = tmp;
+    if (self.dhtn_ID == finger[0].dhtn_ID){
+	finger[0] = tmp;
+    }
+  }
+  else if (dhtmsg->dhtm_type & DHTM_ATLOC){
+    dhtmsg->dhtm_type = DHTM_REDRT;
+    memcpy((char *) &dhtmsg->dhtm_node, (char *) &finger[DHTN_FINGERS], sizeof(dhtnode_t));
+    send(td, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+    close(td);
+  }
+  else {
+    close(td);
+    forward(dhtmsg->dhtm_node.dhtn_ID, dhtmsg, 0);
+  }
 
   return;
 }
