@@ -251,7 +251,7 @@ forward(unsigned char id, dhtmsg_t *dhtmsg, int size)
      call to recv() returns 0.
   */
   /* YOUR CODE HERE */
-  //int sd;
+  int sd;
   int err;  int bytes = 0;
   dhtmsg_t tmp;
 
