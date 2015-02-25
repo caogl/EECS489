@@ -172,10 +172,10 @@ first()
 void dhtn::
 join()
 {
-  int sd, err;
+  int sd_tmp, err;
   dhtmsg_t dhtmsg;
 
-  sd = socks_clntinit(NULL, kenname, kenport);
+  sd_tmp = socks_clntinit(NULL, kenname, kenport);
 
   /* send join message */
   dhtmsg.dhtm_vers = DHTM_VERS;
@@ -184,10 +184,10 @@ join()
   // dhtmsg.dhtm_node = self;
   memcpy((char *) &dhtmsg.dhtm_node, (char *) &self, sizeof(dhtnode_t));
 
-  err = send(sd, (char *) &dhtmsg, sizeof(dhtmsg_t), 0);
+  err = send(sd_tmp, (char *) &dhtmsg, sizeof(dhtmsg_t), 0);
   net_assert((err != sizeof(dhtmsg_t)), "dhtn::join: send");
   
-  socks_close(sd);
+  socks_close(sd_tmp);
 
   return;
 }
@@ -251,21 +251,21 @@ forward(unsigned char id, dhtmsg_t *dhtmsg, int size)
      call to recv() returns 0.
   */
   /* YOUR CODE HERE */
-  int sd;
+  int sd_tmp;
   int err;  int bytes = 0;
   dhtmsg_t tmp;
 
   if (ID_inrange(id, self.dhtn_ID, finger[0].dhtn_ID)){
     dhtmsg->dhtm_type |= DHTM_ATLOC;
   }
-  sd = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
-  err = send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+  sd_tmp = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
+  err = send(sd_tmp, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
   fprintf(stderr, "Forwarding packet %d\n", finger[0].dhtn_ID);
 
   while (1){
-    err = recv(sd, (char *) &tmp+bytes, sizeof(dhtmsg_t), 0);
+    err = recv(sd_tmp, (char *) &tmp+bytes, sizeof(dhtmsg_t), 0);
     if (err <= 0){
-      close(sd);
+      close(sd_tmp);
       break;
     }
     
@@ -273,13 +273,13 @@ forward(unsigned char id, dhtmsg_t *dhtmsg, int size)
     if (bytes < (int) sizeof(dhtmsg_t)){
       continue;
     }
-    close(sd);
+    close(sd_tmp);
 
     bytes = 0; 
     finger[0] = tmp.dhtm_node;
 
-    sd = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
-    err = send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+    sd_tmp = socks_clntinit(&finger[0].dhtn_addr, 0, finger[0].dhtn_port);
+    err = send(sd_tmp, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
     net_assert((err != sizeof(dhtmsg_t)), "dhtn::forward error"); 
     fprintf(stderr, "Forwarding packet %d\n", finger[0].dhtn_ID);
   }
@@ -344,28 +344,28 @@ handlejoin(int td, dhtmsg_t *dhtmsg)
      Don't forget to close the sender socket when you don't need it anymore.
   */
   /* YOUR CODE HERE */
+  int sd_tmp;
   int ID = dhtmsg->dhtm_node.dhtn_ID;
   
   if(self.dhtn_ID == ID || finger[DHTN_FINGERS].dhtn_ID == ID){
     close(td);
-    sd = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
+    sd_tmp = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
     dhtmsg->dhtm_type = DHTM_REID;
-    send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
-    close(sd);
+    send(sd_tmp, (char*) dhtmsg, sizeof(dhtmsg_t), 0);
+    close(sd_tmp);
   }
   else if (ID_inrange(ID, finger[DHTN_FINGERS].dhtn_ID, self.dhtn_ID)){
     close(td);
     dhtnode_t tmp = dhtmsg->dhtm_node;
-    sd = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
+    sd_tmp = socks_clntinit(&dhtmsg->dhtm_node.dhtn_addr, 0, dhtmsg->dhtm_node.dhtn_port);
     
 
     dhtmsg->dhtm_type = DHTM_WLCM;
 
     memcpy((char *) &dhtmsg->dhtm_node, (char *) &self, sizeof(dhtnode_t)); 
-    send(sd, (char*) dhtmsg, sizeof(dhtmsg_t), 0); //send new dhtmsg with new successor updated.
-    send(sd, (char*) &finger[DHTN_FINGERS], sizeof(dhtnode_t), 0); //
-
-    close(sd);
+    send(sd_tmp, (char*) dhtmsg, sizeof(dhtmsg_t), 0); //send new dhtmsg with new successor updated.
+    send(sd_tmp, (char*) &finger[DHTN_FINGERS], sizeof(dhtnode_t), 0); //
+    close(sd_tmp);
     
     finger[DHTN_FINGERS] = tmp;
     if (self.dhtn_ID == finger[0].dhtn_ID){
