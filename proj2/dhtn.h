@@ -20,8 +20,6 @@
 #ifndef __DHTN_H__
 #define __DHTN_H__
 
-#include "hash.h"
-#include "netimg.h"
 #include "imgdb.h"
 
 #define DHTN_UNITTESTING 0

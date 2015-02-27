@@ -21,6 +21,8 @@
 #define __IMGDB_H__
 
 #include "ltga.h"
+#include "netimg.h"
+#include "socks.h"
 #include "hash.h"
 
 #ifdef _WIN32
@@ -55,9 +57,9 @@ class imgdb {
   LTGA curimg;
 
 public:
-  int sd;  // image socket
-  int td;
-  iqry_t iqry; //the query from the netimg;
+  int sd;  // image listen socket
+  int td;  // image server socket generated from accept
+  char img_name[NETIMG_MAXFNAME]; // the queried image name from client
 
   imgdb(); // default constructor
 

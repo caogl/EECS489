@@ -24,6 +24,7 @@
 #include <iostream>
 #include <iomanip>         // setw()
 #include <fstream>
+#include <cstring>
 using namespace std;
 #ifdef _WIN32
 #include <winsock2.h>
@@ -43,12 +44,7 @@ using namespace std;
 #include <GL/glut.h>
 #endif
 
-#include "ltga.h"
-#include "netimg.h"
-#include "socks.h"
-#include "hash.h"
 #include "imgdb.h"
-#include "dhtn.h"
 
 imgdb::
 imgdb()
@@ -240,14 +236,12 @@ searchdb(char *imgname)
     return(0);
   }
   
-  /* Task 2:
-   * Compute SHA1 and object ID.
+  /* Compute SHA1 and object ID.
    * See how both are done in loaddb().
    * Then check Bloom Filter for a hit or miss.
    * See how this is done in loadimg().
    * If Bloom Filter misses, return IMGDB_MISS.
    */
-  /* YOUR CODE HERE */
   unsigned char md[SHA1_MDLEN];
   SHA1((unsigned char *)imgname, strlen(imgname), md);
   id = ID(md); 
@@ -259,15 +253,15 @@ searchdb(char *imgname)
   /* To get here means that you've got a hit at the Bloom Filter.
    * Search the DB for a match to BOTH the image ID and name.
   */
-  for (i = 0; i < nimages; i++) {
-    if ((id == db[i].img_ID) && !strcmp(imgname, db[i].img_name)) {
+  for (i = 0; i < nimages; i++) 
+  {
+    if ((id == db[i].img_ID) && !strcmp(imgname, db[i].img_name))
+    {
       readimg(imgname);
-//      cout<<"img is found"<<endl;
-      return(IMGDB_FOUND);  // found
+      return(IMGDB_FOUND); 
     }
   }
-//  cout <<"false positive"<<endl;
-  return(IMGDB_FALSE); // false positive
+  return(IMGDB_FALSE); 
 }
 
 /*
@@ -399,25 +393,29 @@ sendimg(int td, imsg_t *imsg, char *image, long imgsize, int numseg)
 /*
  * handleqry: accept connection, then receive a query packet, search
  * for the queried image, and reply to client.
+ * if the image is found, return IMGDB_FOUND
+ * else, return IMGDB_MISS 
  */
 int imgdb::
 handleqry()
 {
   char err;
-//  int td; 
   int found;
-//  iqry_t iqry;
+  iqry_t iqry;
   imsg_t imsg;
   double imgdsize;
-  int success = 1;
 
   td = socks_accept(sd, 1);
+  cout<<"td is: "<<td<<endl;
   err = recvqry(td, &iqry);
-  if (err) {
+  strcpy(img_name, iqry.iq_name);
+  if(err) 
+  {
     imsg.im_found = err;
     sendimg(td, &imsg, NULL, 0, 0);
-  } else {
-    
+  } 
+  else 
+  { 
     imsg.im_found = NETIMG_NFOUND;
     found = searchdb(iqry.iq_name);
     if (found == IMGDB_FALSE) {
@@ -432,51 +430,14 @@ handleqry()
       net_assert((imgdsize > (double) LONG_MAX), "imgdb: image too big");
     }
     
-    if (imsg.im_found == NETIMG_FOUND) {
+    if (imsg.im_found == NETIMG_FOUND) 
+    {
       sendimg(td, &imsg, getimage(), (long)imgdsize, NETIMG_NUMSEG);
       socks_close(td);
-    } else {
-      //can't find the image locally, return iqry_name;
-      //sendimg(td, &imsg, NULL, 0, 0);
-      success = -1;
-    }
-  }
-//  socks_close(td);
-
-  return success;
-}
-
-/*
-#ifdef LAB3
-static void
-usage(char *progname)
-{
-  fprintf(stderr, "Usage: %s [ -b <beginID> -e <endID> ]\n", progname); 
-}
-
-int
-main(int argc, char *argv[])
-{ 
-  socks_init();
-  
-  imgdb imgdb;
-
-  // parse args, see the comments for imgdb::args()
-  if (imgdb.args(argc, argv)) {
-    usage(argv[0]);
-    exit(1);
-  }
-  imgdb.loaddb();
-
-  while (1) {
-    imgdb.handleqry();
+    } 
+    else
+      return IMGDB_MISS;
   }
 
-#ifdef _WIN32
-  WSACleanup();
-#endif // _WIN32
-
-  exit(0);
+  return IMGDB_FOUND;
 }
-#endif // LAB3
-*/
