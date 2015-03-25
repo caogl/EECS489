@@ -21,6 +21,7 @@
 #include <stdlib.h>        // atoi()
 #include <assert.h>        // assert()
 #include <limits.h>        // LONG_MAX
+#include <iostream>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>      // socklen_t
@@ -42,6 +43,8 @@
 #endif
 
 #include "netimg.h"
+
+using namespace std;
 
 int sd;                   /* socket descriptor */
 imsg_t imsg;
@@ -164,7 +167,7 @@ int netimg_sendqry(char *imagename, char vers)
   int bytes;
   iqry_t iqry;
 
-  iqry.iq_vers = vers;
+  iqry.iq_vers = NETIMG_VERS;
   iqry.iq_type = NETIMG_QRY;
   strcpy(iqry.iq_name, imagename); 
   bytes = send(sd, (char *) &iqry, sizeof(iqry_t), 0);

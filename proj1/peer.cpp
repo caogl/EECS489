@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
   while(1)
   {
     int maxsd=peer1.sd;
+
     FD_SET(peer1.sd, &rset);
     for(int i=0; i<(int)peer1.peer_table.size(); i++)
     {
@@ -280,12 +281,15 @@ int main(int argc, char *argv[])
         FD_SET(peer1.peer_table[i].pte_sd, &rset);
       }
     }
+    FD_SET(peer1.peer_imgdb.sd, &rset);        
+
     struct timeval t_value;
     t_value.tv_sec = 2;
     t_value.tv_usec = 500000;
     select(maxsd+1, &rset, NULL, NULL, &t_value); 
   
     /*************(1): if the server listen socket is ready to recv **************/
+    
     if (FD_ISSET(peer1.sd, &rset)) 
     {
       //(i): peer table not full, accept connection
@@ -315,5 +319,13 @@ int main(int argc, char *argv[])
       if(peer1.peer_table[i].pte_sd>0 && FD_ISSET(peer1.peer_table[i].pte_sd, &rset))
         peer1.peer_recv(i);
     }
+
+    /************(3): if the imgdb listen socket is ready to recv *************/
+    if (FD_ISSET(peer1.peer_imgdb.sd, &rset))
+    {
+      if(peer1.peer_imgdb.handleqry())
+        cout<<"sending out search packet"<<endl;
+    } 
+
   }
 }

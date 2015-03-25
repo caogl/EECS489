@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include "imgdb.h"
 
 #define net_assert(err, errmsg) { if ((err)) { perror(errmsg); assert(!(err)); } }
 #define PR_PORTSEP   ':'
@@ -57,6 +58,7 @@ class peer
     void peer_recv(int index);
 
     int sd;                  		// listen socket
+    imgdb peer_imgdb;
     vector<pte_t> peer_table;		// peer table
     vector<pte_t> peer_decline;		// decline table
     pte_t redirected;        		// the redirected peer node
