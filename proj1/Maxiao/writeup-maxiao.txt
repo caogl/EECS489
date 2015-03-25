@@ -1,0 +1,3 @@
+(1) Platform :  Linux, and Mac OS X 10.6
+(2) Please use my Makefile to compile my code. It also needs two support files ltga.cpp and ltga.h
+(3) I learned a lot from this assignment. I am pretty much understanding how TCP sockets work by solving various problems during the assignment(e.g. one has to use a while loop to call recv() until all the bytes are received); In the meantime, I also practiced c++ class/structure, STL utilization and algorithm design. I kinda like this project.    

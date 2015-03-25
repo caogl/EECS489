@@ -1,0 +1,7 @@
+Test case: 
+(1) the one given in spec; 
+(2) change (1), let the last peer has table size of 2;
+(3) 9 windows, the first one has table size of 7; 
+    the following 7 windows all have table size of 1, try to connect to the first one;
+    the last window has window size of 8, try to connect the 3rd window
+(4) change (3), the the 2nd window into a table size of 2
