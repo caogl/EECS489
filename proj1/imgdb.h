@@ -59,13 +59,13 @@ class imgdb
 
     imgdb();                // imgdb constructor
     int handleqry();     
+    void imgdb_sendimg();
    
   private:
     void imgdb_sockinit();    
     int imgdb_accept();
     int imgdb_recvqry(int td_tmp);
     int imgdb_loadimg();
-    void imgdb_sendimg();
 
     LTGA image; 
     imsg_t imsg;

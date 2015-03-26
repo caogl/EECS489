@@ -1,4 +1,5 @@
 #include "imgdb.h"
+#include "peer.h"
 
 /* defult constructor for imgdb, called when peer is initialized */
 imgdb::imgdb()
@@ -13,6 +14,7 @@ void imgdb::imgdb_sockinit()
   char sname[NETIMG_MAXFNAME+1];
   memset(sname, '\0', NETIMG_MAXFNAME+1);
 
+  td=PR_UNINIT_SD;
   sd = socket(AF_INET, SOCK_STREAM,IPPROTO_TCP);
   if(sd<0)
   {
@@ -59,6 +61,9 @@ int imgdb::handleqry()
     if(imgdb_loadimg()==NETIMG_FOUND)
     {
       imgdb_sendimg();
+      close(td);
+      td=PR_UNINIT_SD;
+
       return 0;
     }
     else
@@ -131,7 +136,7 @@ int imgdb::imgdb_accept()
 
   int len = sizeof(struct sockaddr_in);
   int td_tmp = accept(sd, (struct sockaddr *)&client, (socklen_t *)&len);
-  if(td<0)
+  if(td_tmp<0)
   {
     perror("error in accepting");
     exit(1);
@@ -224,7 +229,7 @@ void imgdb::imgdb_sendimg()
     exit(1);
   }
 
-  if (&image) 
+  if (imsg.im_found == NETIMG_FOUND) 
   {
     segsize = img_size/NETIMG_NUMSEG;                     /* compute segment size */
     segsize = segsize < NETIMG_MSS ? NETIMG_MSS : segsize; /* but don't let segment be too small*/

@@ -281,7 +281,8 @@ int main(int argc, char *argv[])
         FD_SET(peer1.peer_table[i].pte_sd, &rset);
       }
     }
-    FD_SET(peer1.peer_imgdb.sd, &rset);        
+    FD_SET(peer1.peer_imgdb.sd, &rset); 
+    FD_SET(peer1.peer_imgdb.td, &rset);            
 
     struct timeval t_value;
     t_value.tv_sec = 2;
@@ -289,7 +290,6 @@ int main(int argc, char *argv[])
     select(maxsd+1, &rset, NULL, NULL, &t_value); 
   
     /*************(1): if the server listen socket is ready to recv **************/
-    
     if (FD_ISSET(peer1.sd, &rset)) 
     {
       //(i): peer table not full, accept connection
@@ -326,6 +326,14 @@ int main(int argc, char *argv[])
       if(peer1.peer_imgdb.handleqry())
         cout<<"sending out search packet"<<endl;
     } 
-
+    else if(peer1.peer_imgdb.td>0) //check for image search timeout
+    {
+      if(!t_value.tv_sec && !t_value.tv_usec) // time is up, send back IMG_NFOUND and close imgdb.td
+      {
+        peer1.peer_imgdb.imgdb_sendimg();
+        close(peer1.peer_imgdb.td);
+        peer1.peer_imgdb.td=PR_UNINIT_SD;
+      }
+    }
   }
 }
