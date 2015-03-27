@@ -56,21 +56,22 @@ class imgdb
   public:
     int sd;                 // image listen socket
     int td;                 // socket connecting netimg
+    sockaddr_in self;       // imgdb socket addr+port
+
+    char fname[NETIMG_MAXFNAME+1];
+    imsg_t imsg;
+    LTGA image; 
+    long img_size;
 
     imgdb();                // imgdb constructor
     int handleqry();     
-    void imgdb_sendimg();
+    void imgdb_sendimg(char* img);
+    int imgdb_loadimg();
    
   private:
     void imgdb_sockinit();    
     int imgdb_accept();
     int imgdb_recvqry(int td_tmp);
-    int imgdb_loadimg();
-
-    LTGA image; 
-    imsg_t imsg;
-    long img_size;
-    char fname[NETIMG_MAXFNAME+1];
 };
 
 #endif

@@ -10,7 +10,6 @@ imgdb::imgdb()
 /* initialize imgdb server listen socket */
 void imgdb::imgdb_sockinit()
 {
-  struct sockaddr_in self;
   char sname[NETIMG_MAXFNAME+1];
   memset(sname, '\0', NETIMG_MAXFNAME+1);
 
@@ -21,36 +20,49 @@ void imgdb::imgdb_sockinit()
     perror("error in creating socket");
     exit(1);
   }
+  struct linger linger_time;
+  linger_time.l_onoff = 1;
+  linger_time.l_linger = PR_LINGER;
+  setsockopt(sd, SOL_SOCKET, SO_LINGER, &linger_time, sizeof(linger_time));
+
   memset((char *) &self, 0, sizeof(struct sockaddr_in));
   self.sin_family = AF_INET;
   self.sin_addr.s_addr = INADDR_ANY;
   self.sin_port = 0;
-  
+
+  int on = 1;
+  setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+  setsockopt(sd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
   bind(sd, (struct sockaddr *) &self, sizeof(struct sockaddr_in));
   listen(sd, NETIMG_QLEN);
 
-  struct sockaddr_in tmp;
   int len = sizeof(sockaddr_in);
-  int status = getsockname(sd, (struct sockaddr *)&tmp, (socklen_t *)&len);
+  int status = getsockname(sd, (struct sockaddr *)&self, (socklen_t *)&len);
   if(status<0)
   {
     perror("error getsockname");
     exit(1);
   }
-  self.sin_port = tmp.sin_port;
+
+  // Since the image socket is bound to INADDR_ANY, cannot use getsockname() to find out the
+  // address of the socket (it will return 0's)
   status = gethostname(sname, NETIMG_MAXFNAME+1);
   if(status<0)
   {
     perror("error gethostname");
     exit(1);
   }
+  struct hostent *sp;
+  sp = gethostbyname(sname);
+  memcpy(&(self.sin_addr), sp->h_addr, sp->h_length);
 
-  fprintf(stderr, "imgdb socket address is %s:%d\n", sname, ntohs(self.sin_port));
+  fprintf(stderr, "Imgdb socket address is %s:%d\n", sname, ntohs(self.sin_port));
 }
 
-/* if (1) receives a query from netimg client, check to see if image exist
- *        if yes, send the image, if not ,send the search packet
- *    (2) receives a image transfer ......
+/* if   (1): receives a packet from netimg client, check to see if image exist
+ *           if yes, send the image, if not ,send the search packet
+ * else (2): receives a packet from a peer image socket, 
+ *           receives the image, then send to netimg client
  */     
 int imgdb::handleqry()
 {
@@ -60,7 +72,7 @@ int imgdb::handleqry()
     td=td_tmp;
     if(imgdb_loadimg()==NETIMG_FOUND)
     {
-      imgdb_sendimg();
+      imgdb_sendimg(NULL);
       close(td);
       td=PR_UNINIT_SD;
 
@@ -71,7 +83,45 @@ int imgdb::handleqry()
   }
   else
   {
-      return 0;
+    //char *ip=(char *) image.GetPixels();
+
+    double img_dsize;
+
+    imsg.im_height=ntohs(imsg.im_height);
+    imsg.im_width=ntohs(imsg.im_width);
+    img_dsize = (double) (imsg.im_height*imsg.im_width*(u_short)imsg.im_depth);
+    net_assert((img_dsize > (double) LONG_MAX), "netimg: image too big");
+    img_size = (long) img_dsize;
+
+    char ip[img_size];
+    memset(ip, '\0', img_size);
+
+    int byte_recv=0;
+    while(byte_recv<img_size)
+    {
+      int err=recv(td_tmp, ip+byte_recv, img_size-byte_recv, 0);
+      if(err==0)
+        break;
+      if(err<0)
+      {
+        close(td_tmp);
+        perror("peer: peer_recv.\n");
+        exit(1);
+      }
+      byte_recv+=err;
+    }
+
+    imsg.im_height=htons(imsg.im_height);
+    imsg.im_width=htons(imsg.im_width);
+
+    imgdb_sendimg(ip);
+
+    /* very important to close the td_tmp descriptor here, if not, subsequent image transfer between peers cannot succeed, connect to the other image socket for image transfer takes forever*/
+    close(td_tmp);                   
+    close(td);
+    td=PR_UNINIT_SD;
+
+    return 0;
   }
 }
 
@@ -141,6 +191,10 @@ int imgdb::imgdb_accept()
     perror("error in accepting");
     exit(1);
   }
+  struct linger linger_time;
+  linger_time.l_onoff = 1;
+  linger_time.l_linger = PR_LINGER;
+  setsockopt(td_tmp, SOL_SOCKET, SO_LINGER, &linger_time, sizeof(linger_time));
 
   struct linger linger_setup;
   linger_setup.l_onoff = 1;
@@ -156,7 +210,6 @@ int imgdb::imgdb_accept()
   fprintf(stderr, "Connected from client or peer with image %s:%d\n",
           ((cp && cp->h_name) ? cp->h_name : inet_ntoa(client.sin_addr)),
           ntohs(client.sin_port));
-
   return td_tmp;
 }
 
@@ -174,7 +227,6 @@ int imgdb::imgdb_recvqry(int td_tmp)
     iqry_t iqry;
     memcpy(&iqry, header, 2);
     bytes = recv(td_tmp, (char *)&iqry+2, sizeof(iqry_t)-2, 0);
-    cout<<iqry.iq_vers<<endl;
     if (bytes<0 || iqry.iq_vers!= NETIMG_VERS)
     {
       perror("error in recv or wrong vers");
@@ -188,7 +240,7 @@ int imgdb::imgdb_recvqry(int td_tmp)
   {
     memcpy(&imsg, header, 2);
     bytes+=recv(td_tmp, (char*)&imsg+2, sizeof(imsg_t)-2, 0);
-    if (bytes<0)
+    if (bytes<0 || bytes!=(int)sizeof(imsg_t))
     {
       perror("error in recv imsg packet");
       exit(1);
@@ -211,21 +263,17 @@ int imgdb::imgdb_recvqry(int td_tmp)
  * Terminate process upon encountering any error.
  * Doesn't otherwise modify anything.
 */
-void imgdb::imgdb_sendimg()
+void imgdb::imgdb_sendimg(char* img)
 {
   int segsize;
   char *ip;
   int bytes;
   long left;
 
-  /* Task 2: YOUR CODE HERE
-   * Send the imsg packet to client connected to socket td.
-   */
-  /* YOUR CODE HERE */
   bytes = send(td, &imsg, sizeof(imsg_t), 0);
   if(bytes<0)
   {
-    perror("error in sending");
+    perror("error in sending imsg");
     exit(1);
   }
 
@@ -233,17 +281,14 @@ void imgdb::imgdb_sendimg()
   {
     segsize = img_size/NETIMG_NUMSEG;                     /* compute segment size */
     segsize = segsize < NETIMG_MSS ? NETIMG_MSS : segsize; /* but don't let segment be too small*/
-
-    ip = (char *) image.GetPixels();    /* ip points to the start of byte buffer holding image */
     
-    for (left = img_size; left; left -= bytes) {  // "bytes" contains how many bytes was sent
-      // at the last iteration.
-
-      /* Task 2: YOUR CODE HERE
-       * Send one segment of data of size segsize at each iteration.
-       * The last segment may be smaller than segsize
-       */
-      /* YOUR CODE HERE */
+    if(!img) 
+      ip = (char *) image.GetPixels();    /* ip points to the start of byte buffer holding image */
+    else
+      ip=img;
+    
+    for (left = img_size; left; left -= bytes) // "bytes" contains how many bytes was sent at the last iteration.
+    {  
       if(segsize>left)
       {
         segsize = left;
@@ -251,7 +296,7 @@ void imgdb::imgdb_sendimg()
       bytes = send(td, ip+img_size-left, segsize, 0);
       if(bytes<0)
       {
-        perror("error in sending");
+        perror("error in sending image");
         exit(1);
       }
 
