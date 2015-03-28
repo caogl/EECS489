@@ -595,6 +595,7 @@ handlepkt()
       int byte_recv = recv(td, (char*)&dhtsrch+bytes, sizeof(dhtsrch_t)-bytes, 0);      
       net_assert((byte_recv < (int)(sizeof(dhtsrch_t)-bytes)), "dhtn::handlepkt: DHTM_RPLY recv error");
       fprintf(stderr, "Received RPLY from node ID %d\n",dhtmsg.dhtm_node.dhtn_ID);
+      close(td);
 
       //get the permission to cache the image and send it to client
       imsg_t imsg;
