@@ -590,7 +590,6 @@ handlepkt()
     } 
     else if(dhtmsg.dhtm_type == DHTM_RPLY)
     {
-      cout<<"hahahahaha"<<endl;
       dhtsrch_t dhtsrch;
       dhtsrch.dhts_msg=dhtmsg;
       int byte_recv = recv(td, (char*)&dhtsrch+bytes, sizeof(dhtsrch_t)-bytes, 0);      
