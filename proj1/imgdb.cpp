@@ -117,7 +117,7 @@ int imgdb::handleqry()
     imgdb_sendimg(ip);
 
     /* very important to close the td_tmp descriptor here, if not, subsequent image transfer between peers cannot succeed, connect to the other image socket for image transfer takes forever*/
-    close(td_tmp);                   
+    close(td_tmp);        
     close(td);
     td=PR_UNINIT_SD;
 
