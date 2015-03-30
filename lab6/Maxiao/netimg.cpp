@@ -422,12 +422,15 @@ netimg_recvimage(void)
      * losses, just keep a count of the total number of packets received.
      */
     /* YOUR CODE HERE */
-    if (num){ // at least one previous FEC packet has been lost, 
+    if (num)
+    { // at least one previous FEC packet has been lost, 
       fec_head += (num*fwnd*datasize);
-      if (rem) 
-	fec_lost = fec_head;
       fec_count = 0; 
-    } else if (snd_next != fec_exp) { 
+      if (rem) 
+        fec_lost = fec_head;
+    } 
+    else if (snd_next != fec_exp) 
+    { 
       fec_lost = fec_exp;
     } 
     
