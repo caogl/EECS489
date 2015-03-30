@@ -489,11 +489,14 @@ netimg_recvimage(void)
      * processing of the next window.
      */
     /* YOUR CODE HERE */
-    if (num > 1 || (num == 1 && rem)){ 
+    if (num > 1 || (num == 1 && rem))
+    { 
       fec_head += (fwnd * datasize * (num + (rem > 0) -1)); 
       fec_lost = fec_head;
       fec_count = 0;
-    } else if (snd_next != fec_exp){
+    } 
+    else if (snd_next != fec_exp)
+    {
       fec_lost = fec_exp;
     }
   
@@ -502,12 +505,11 @@ netimg_recvimage(void)
   
     num = (snd_next-fec_head)/datasize;
     rem = (snd_next-fec_head)%datasize;
-    if (fec_count == num + (rem > 0) -1){ // rem is used to detect the last short data packet
-      for (unsigned int j=fec_head; j<snd_next; j += datasize){
-	if (j != fec_lost){
+    if (fec_count == num + (rem > 0) -1)
+    { // rem is used to detect the last short data packet
+      for (unsigned int j=fec_head; j<snd_next; j += datasize)
+	if (j != fec_lost)
           fec_accum(FEC, image+j, datasize, std::min(datasize, img_size-(int)j));
-	}
-      }
       memcpy(image+fec_lost, FEC, std::min(datasize, img_size-(int)fec_lost));
     }
 
