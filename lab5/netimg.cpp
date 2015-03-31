@@ -211,8 +211,8 @@ netimg_recvimsg()
 void
 netimg_recvimg(void)
 {
-  ihdr_t hdr;  // memory to hold packet header
-   
+  ihdr_t ihdr;  // memory to hold packet header
+  int segsize, snd_next;
   /* 
    * Lab5 Task 2:
    * 
@@ -254,8 +254,14 @@ netimg_recvimg(void)
    * received.
    */
   /* Lab5: YOUR CODE HERE */
+  int err = recv(sd, &ihdr, sizeof(ihdr_t), MSG_PEEK);
+  assert(err>=0);
 
-  if (hdr.ih_type == NETIMG_DATA) {
+  segsize = ntohs(ihdr.ih_size);
+  snd_next = ntohl(ihdr.ih_seqn);
+
+  if (ihdr.ih_type == NETIMG_DATA) 
+  {
     /* 
      * Lab5 Task 2
      *
@@ -271,10 +277,29 @@ netimg_recvimg(void)
      * number in the header to host byte order again.
      */
     /* Lab5: YOUR CODE HERE */
-
+    struct iovec iov[NETIMG_NUMIOV];
+    iov[0].iov_base = &ihdr;
+    iov[0].iov_len = sizeof(ihdr_t);
+    iov[1].iov_base = image+snd_next;;
+    iov[1].iov_len = segsize;
+    
     fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n",
-            hdr.ih_seqn, hdr.ih_size);
+            ihdr.ih_seqn, ihdr.ih_size);
 
+    struct msghdr mh;
+    mh.msg_name = NULL;
+    mh.msg_namelen = 0;
+    mh.msg_iov = iov;
+    mh.msg_iovlen = NETIMG_NUMIOV;
+    mh.msg_control = NULL;
+    mh.msg_controllen = 0;
+
+    if (recvmsg(sd, &mh, 0) == -1)
+    {
+      close(sd);
+      fprintf(stderr, "recv img error");
+      exit(1);
+    }
     /* Lab6 Task 2
      *
      * You should handle the case when the FEC data packet itself may be

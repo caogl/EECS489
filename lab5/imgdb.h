@@ -30,7 +30,8 @@
 #endif
 #define IMGDB_FOLDER    "."
 
-class imgdb {
+class imgdb 
+{
   struct sockaddr_in self;
   char sname[NETIMG_MAXFNAME];
 

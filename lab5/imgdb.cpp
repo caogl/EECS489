@@ -169,7 +169,8 @@ marshall_imsg(imsg_t *imsg)
 char imgdb::
 recvqry(int sd, iqry_t *iqry)
 {
-  int bytes;  // stores the return value of recvfrom()
+  int len = sizeof(struct sockaddr_in);
+  int bytes = recvfrom(sd, iqry, sizeof(iqry_t), 0, (struct sockaddr*)&client, (socklen_t *)&len);
 
   /*
    * Lab5 Task 1: Call recvfrom() to receive the iqry_t packet from
@@ -178,6 +179,7 @@ recvqry(int sd, iqry_t *iqry)
    * recvfrom() in local variable "bytes".
   */
   /* Lab5: YOUR CODE HERE */
+  
   
   if (bytes != sizeof(iqry_t)) {
     return (NETIMG_ESIZE);
@@ -191,7 +193,6 @@ recvqry(int sd, iqry_t *iqry)
   if (strlen((char *) iqry->iq_name) >= NETIMG_MAXFNAME) {
     return(NETIMG_ENAME);
   }
-
   return(0);
 }
   
@@ -209,6 +210,13 @@ sendpkt(int sd, char *pkt, int size)
 {
   /* Lab5: YOUR CODE HERE */
   // update the return value to the correct value.
+  int bytes = sendto(sd, pkt, size, 0, (struct sockaddr*)&client, sizeof(struct sockaddr_in));
+  if (bytes <0)
+  {
+    fprintf(stderr, "send pkt error");
+    exit(1);
+  }
+
   return(0);
 }
 
@@ -245,7 +253,11 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
 
   // send the imsg packet to client by calling sendpkt().
   bytes = sendpkt(sd, (char *) imsg, sizeof(imsg_t));
-  net_assert((bytes != sizeof(imsg_t)), "imgdb::sendimg: send imsg");
+  if(bytes<0)
+  {
+    fprintf(stderr, "sendpkt failed");
+    exit(1);
+  }
 
   if (image) {
     ip = image; /* ip points to the start of image byte buffer */
@@ -256,6 +268,8 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * make sure that the send buffer is of size at least mss.
      */
     /* Lab5: YOUR CODE HERE */
+    int bufsize = (int)mss;
+    setsockopt(sd, SOL_SOCKET,SO_SNDBUF,&bufsize,sizeof(int));
 
     /* Lab5 Task 1:
      *
@@ -266,6 +280,21 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * re-used for each chunk of data to be sent.
      */
     /* Lab5: YOUR CODE HERE */
+    ihdr_t ihdr;
+    ihdr.ih_vers = NETIMG_VERS;
+    ihdr.ih_type = NETIMG_DATA;
+
+    struct iovec iov[NETIMG_NUMIOV];
+    iov[0].iov_base = &ihdr;
+    iov[0].iov_len = sizeof(ihdr_t);
+
+    struct msghdr mh;
+    mh.msg_name = &client;
+    mh.msg_namelen = sizeof(struct sockaddr_in);
+    mh.msg_iov = iov;
+    mh.msg_iovlen = NETIMG_NUMIOV;
+    mh.msg_control = NULL;
+    mh.msg_controllen = 0; 
 
     do {
       /* size of this segment */
@@ -291,10 +320,10 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
       /* Lab6: YOUR CODE HERE */
       
       /* probabilistically drop a segment */
-      if (((float) random())/INT_MAX < pdrop) {
-        fprintf(stderr, "imgdb_sendimg: DROPPED offset 0x%x, %d bytes\n",
-                snd_next, segsize);
-      } else { 
+      if (((float) random())/INT_MAX < pdrop) 
+        fprintf(stderr, "imgdb_sendimg: DROPPED offset 0x%x, %d bytes\n", snd_next, segsize);
+      else 
+      { 
         
         /* Lab5 Task 1: 
          * Send one segment of data of size segsize at each iteration.
@@ -305,7 +334,17 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
          * the segment off by calling sendmsg().
          */
         /* Lab5: YOUR CODE HERE */
-        
+        ihdr.ih_size = htons(segsize);
+        ihdr.ih_seqn = htonl(snd_next);
+        iov[1].iov_base = ip+snd_next;
+        iov[1].iov_len = segsize;
+        if (sendmsg(sd, &mh, 0) == -1)
+        {
+          fprintf(stderr, "image socket sending error");
+          close(sd);
+          exit(1);
+        } 
+
         fprintf(stderr, "imgdb_sendimg: sent offset 0x%x, %d bytes\n",
                 snd_next, segsize);
         

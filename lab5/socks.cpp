@@ -75,6 +75,7 @@ socks_servinit(char *progname, struct sockaddr_in *self, char *sname)
   /* Lab 5 Task 1:
    * create a UDP socket */
   /* YOUR CODE HERE */
+  sd=socket(AF_INET, SOCK_DGRAM, 0);
   
   memset((char *) self, 0, sizeof(struct sockaddr_in));
   self->sin_family = AF_INET;
@@ -134,6 +135,7 @@ socks_clntinit(char *sname, u_short port, int rcvbuf)
 
   /* Lab 5 Task 2: create a new UDP socket. */
   /* YOUR CODE HERE */
+  sd = socket(AF_INET, SOCK_DGRAM, 0);
 
   /* obtain the server's IPv4 address from sname and initialize the
      socket address with server's address and port number . */
@@ -148,7 +150,7 @@ socks_clntinit(char *sname, u_short port, int rcvbuf)
    * set socket receive buffer size to be at least rcvbuf bytes.
   */
   /* YOUR CODE HERE */
-
+  setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof(int));
   fprintf(stderr, "socks_clntinit: socket receive buffer set to %d bytes\n", rcvbuf);
   
   /* since this is a UDP socket, connect simply "remembers"
