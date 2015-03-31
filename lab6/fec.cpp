@@ -18,10 +18,10 @@
  *
 */
 
-#include "ltga.h"
 #include <cstring>
+#include "fec.h"
 /*
- * Task 1
+ * Lab6 Task 1
  *
  * fec_init(): initialize the FEC data by copying the provided "imgseg"
  * into the provided "fecdata".  If "segsize" is smaller than "datasize",
@@ -30,17 +30,16 @@
 void
 fec_init(unsigned char *fecdata, unsigned char *imgseg, int datasize, int segsize)
 {
-  /* YOUR CODE HERE */
+  /* Lab6: YOUR CODE HERE */
   memcpy(fecdata, imgseg, segsize);
-  if (segsize < datasize){
+  if(segsize < datasize)
     memset(fecdata+segsize, 0, datasize-segsize);
-  }
 
   return;
 }
 
 /*
- * Task 1
+ * Lab6 Task 1
  *
  * fec_accum(): accumulate the provided "imgseg" into the provided "fecdata"
  * by XOR them.  If "segsize" is smaller than "datasize", XOR the
@@ -49,11 +48,10 @@ fec_init(unsigned char *fecdata, unsigned char *imgseg, int datasize, int segsiz
 void
 fec_accum(unsigned char *fecdata, unsigned char *imgseg, int datasize, int segsize)
 {
-  /* YOUR CODE HERE */
-  for (int i=0; i<segsize; i++){
-    *(fecdata+i) ^= *(imgseg+i); 
-  }
-  
+  /* Lab6: YOUR CODE HERE */
+  for (int i=0; i<segsize; i++)
+    *(fecdata+i) ^= *(imgseg+i);
+
   return;
 }
 
