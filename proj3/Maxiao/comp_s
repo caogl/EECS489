@@ -1,0 +1,349 @@
+imgdb_sendimage: sent offset 0x0, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x2800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: DROPPED offset 0x5000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x7800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0xa000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: DROPPED offset 0xc800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: DROPPED offset 0xf000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x11800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: DROPPED offset 0x14000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x16800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent FEC offset 0x1b800, segment count: 11
+imgdb_sendimage: DROPPED offset 0x1b800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x0
+imgdb_sendimage: sent offset 0x23000, 10240 bytes, unacked: 0x0
+imgdb_sendimage: received ack: 0x2800, unacked was: 0x0, send next 0x25800
+imgdb_sendimage: received ack: 0x5000, unacked was: 0x2800, send next 0x25800
+imgdb_sendimage: RTO unacked: 0x5000, next offset 0x25800, usable -10240 bytes
+imgdb_sendimage: DROPPED offset 0x5000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x7800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0xa000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0xc800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0xf000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x11800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x14000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x16800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x1e000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent FEC offset 0x20800, segment count: 11
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x23000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x25800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x2d000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: RTO unacked: 0x5000, next offset 0x2f800, usable 10240 bytes
+imgdb_sendimage: sent offset 0x5000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x7800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0xa000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0xc800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0xf000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x11800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x14000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x19000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x1e000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent FEC offset 0x20800, segment count: 11
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x23000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: DROPPED offset 0x2a800, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: sent offset 0x2d000, 10240 bytes, unacked: 0x5000
+imgdb_sendimage: received ack: 0x7800, unacked was: 0x5000, send next 0x2f800
+imgdb_sendimage: RTO unacked: 0x7800, next offset 0x2f800, usable -40960 bytes
+imgdb_sendimage: DROPPED offset 0x7800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0xa000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0xc800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0xf000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0x11800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x14000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0x19000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent FEC offset 0x23000, segment count: 11
+imgdb_sendimage: DROPPED offset 0x23000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: RTO unacked: 0x7800, next offset 0x2d000, usable 10240 bytes
+imgdb_sendimage: sent offset 0x7800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0xa000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0xc800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0xf000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x11800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x14000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: DROPPED offset 0x1b800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent FEC offset 0x23000, segment count: 11
+imgdb_sendimage: DROPPED offset 0x23000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0x7800
+imgdb_sendimage: received ack: 0xa000, unacked was: 0x7800, send next 0x2a800
+imgdb_sendimage: received ack: 0xc800, unacked was: 0xa000, send next 0x2a800
+imgdb_sendimage: received ack: 0xf000, unacked was: 0xc800, send next 0x2a800
+imgdb_sendimage: RTO unacked: 0xf000, next offset 0x2a800, usable 10240 bytes
+imgdb_sendimage: DROPPED offset 0xf000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x11800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x14000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x16800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x1b800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x23000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent FEC offset 0x2a800, segment count: 11
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x2d000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x2f800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x32000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x37000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x39800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: RTO unacked: 0xf000, next offset 0x3c000, usable 10240 bytes
+imgdb_sendimage: sent offset 0xf000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x11800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x14000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x20800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x23000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent FEC offset 0x2a800, segment count: 11
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x2d000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: DROPPED offset 0x2f800, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0xf000
+imgdb_sendimage: received ack: 0x11800, unacked was: 0xf000, send next 0x34800
+imgdb_sendimage: received ack: 0x14000, unacked was: 0x11800, send next 0x34800
+imgdb_sendimage: RTO unacked: 0x14000, next offset 0x34800, usable -10240 bytes
+imgdb_sendimage: sent offset 0x14000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED offset 0x19000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x23000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED offset 0x28000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED offset 0x2a800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED offset 0x2d000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: DROPPED FEC offset 0x2f800, segment count: 11
+imgdb_sendimage: sent offset 0x2f800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x37000, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: sent offset 0x39800, 10240 bytes, unacked: 0x14000
+imgdb_sendimage: received ack: 0x16800, unacked was: 0x14000, send next 0x3c000
+imgdb_sendimage: RTO unacked: 0x16800, next offset 0x3c000, usable -30720 bytes
+imgdb_sendimage: DROPPED offset 0x16800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x23000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x25800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x28000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x2d000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x2f800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED FEC offset 0x32000, segment count: 11
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x37000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x39800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x3c000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: RTO unacked: 0x16800, next offset 0x41000, usable 10240 bytes
+imgdb_sendimage: sent offset 0x16800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x19000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x1b800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x1e000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x20800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x23000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x25800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x28000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x2a800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED offset 0x2d000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: sent offset 0x2f800, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: DROPPED FEC offset 0x32000, segment count: 11
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0x16800
+imgdb_sendimage: received ack: 0x19000, unacked was: 0x16800, send next 0x34800
+imgdb_sendimage: received ack: 0x1b800, unacked was: 0x19000, send next 0x34800
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0x1b800
+imgdb_sendimage: received ack: 0x1e000, unacked was: 0x1b800, send next 0x37000
+imgdb_sendimage: DROPPED offset 0x37000, 10240 bytes, unacked: 0x1e000
+imgdb_sendimage: sent offset 0x39800, 10240 bytes, unacked: 0x1e000
+imgdb_sendimage: received ack: 0x20800, unacked was: 0x1e000, send next 0x3c000
+imgdb_sendimage: received ack: 0x23000, unacked was: 0x20800, send next 0x3c000
+imgdb_sendimage: DROPPED offset 0x3c000, 10240 bytes, unacked: 0x23000
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x23000
+imgdb_sendimage: received ack: 0x25800, unacked was: 0x23000, send next 0x41000
+imgdb_sendimage: received ack: 0x28000, unacked was: 0x25800, send next 0x41000
+imgdb_sendimage: sent offset 0x41000, 10240 bytes, unacked: 0x28000
+imgdb_sendimage: received ack: 0x2a800, unacked was: 0x28000, send next 0x43800
+imgdb_sendimage: DROPPED offset 0x43800, 10240 bytes, unacked: 0x2a800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x2a800
+imgdb_sendimage: received ack: 0x2d000, unacked was: 0x2a800, send next 0x48800
+imgdb_sendimage: RTO unacked: 0x2d000, next offset 0x48800, usable 10240 bytes
+imgdb_sendimage: sent offset 0x2d000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: DROPPED offset 0x2f800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x37000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x39800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: DROPPED offset 0x3c000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: DROPPED offset 0x3e800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x41000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent FEC offset 0x48800, segment count: 11
+imgdb_sendimage: DROPPED offset 0x48800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: DROPPED offset 0x4d800, 10240 bytes, unacked: 0x2d000
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x2d000
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 4
+imgdb_sendimage: received ack: 0x2f800, unacked was: 0x2d000, send next 0x50280
+imgdb_sendimage: RTO unacked: 0x2f800, next offset 0x50280, usable -10880 bytes
+imgdb_sendimage: sent offset 0x2f800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x32000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x34800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: DROPPED offset 0x37000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: DROPPED offset 0x39800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x3c000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent FEC offset 0x4b000, segment count: 11
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x2f800
+imgdb_sendimage: received ack: 0x32000, unacked was: 0x2f800, send next 0x50000
+imgdb_sendimage: received ack: 0x34800, unacked was: 0x32000, send next 0x50000
+imgdb_sendimage: received ack: 0x37000, unacked was: 0x34800, send next 0x50000
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x37000
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 3
+imgdb_sendimage: RTO unacked: 0x37000, next offset 0x50280, usable 9600 bytes
+imgdb_sendimage: sent offset 0x37000, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED offset 0x39800, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: sent offset 0x3c000, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED offset 0x3e800, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED offset 0x4b000, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED offset 0x4d800, 10240 bytes, unacked: 0x37000
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x37000
+imgdb_sendimage: DROPPED FEC offset 0x50280, segment count: 11
+imgdb_sendimage: received ack: 0x39800, unacked was: 0x37000, send next 0x50280
+imgdb_sendimage: RTO unacked: 0x39800, next offset 0x50280, usable 30080 bytes
+imgdb_sendimage: DROPPED offset 0x39800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x3c000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x41000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x39800
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 10
+imgdb_sendimage: RTO unacked: 0x39800, next offset 0x50280, usable 30080 bytes
+imgdb_sendimage: DROPPED offset 0x39800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: DROPPED offset 0x3c000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: DROPPED offset 0x46000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x39800
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 10
+imgdb_sendimage: RTO unacked: 0x39800, next offset 0x50280, usable 60800 bytes
+imgdb_sendimage: sent offset 0x39800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x3c000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: DROPPED offset 0x3e800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x39800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x39800
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 10
+imgdb_sendimage: received ack: 0x3c000, unacked was: 0x39800, send next 0x50280
+imgdb_sendimage: received ack: 0x3e800, unacked was: 0x3c000, send next 0x50280
+imgdb_sendimage: RTO unacked: 0x3e800, next offset 0x50280, usable 50560 bytes
+imgdb_sendimage: DROPPED offset 0x3e800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x41000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x3e800
+imgdb_sendimage: DROPPED FEC offset 0x50280, segment count: 8
+imgdb_sendimage: RTO unacked: 0x3e800, next offset 0x50280, usable 60800 bytes
+imgdb_sendimage: sent offset 0x3e800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: DROPPED offset 0x48800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x3e800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x3e800
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 8
+imgdb_sendimage: received ack: 0x41000, unacked was: 0x3e800, send next 0x50280
+imgdb_sendimage: RTO unacked: 0x41000, next offset 0x50280, usable 60800 bytes
+imgdb_sendimage: DROPPED offset 0x41000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: DROPPED offset 0x46000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: DROPPED offset 0x48800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: DROPPED offset 0x50000, 640 bytes, unacked: 0x41000
+imgdb_sendimage: DROPPED FEC offset 0x50280, segment count: 7
+imgdb_sendimage: RTO unacked: 0x41000, next offset 0x50280, usable 92160 bytes
+imgdb_sendimage: sent offset 0x41000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: DROPPED offset 0x43800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x41000
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x41000
+imgdb_sendimage: sent FEC offset 0x50280, segment count: 7
+imgdb_sendimage: received ack: 0x43800, unacked was: 0x41000, send next 0x50280
+imgdb_sendimage: RTO unacked: 0x43800, next offset 0x50280, usable 71040 bytes
+imgdb_sendimage: sent offset 0x43800, 10240 bytes, unacked: 0x43800
+imgdb_sendimage: sent offset 0x46000, 10240 bytes, unacked: 0x43800
+imgdb_sendimage: sent offset 0x48800, 10240 bytes, unacked: 0x43800
+imgdb_sendimage: sent offset 0x4b000, 10240 bytes, unacked: 0x43800
+imgdb_sendimage: sent offset 0x4d800, 10240 bytes, unacked: 0x43800
+imgdb_sendimage: sent offset 0x50000, 640 bytes, unacked: 0x43800
+imgdb_sendimage: DROPPED FEC offset 0x50280, segment count: 6
+imgdb_sendimage: received ack: 0x46000, unacked was: 0x43800, send next 0x50280
+imgdb_sendimage: received ack: 0x48800, unacked was: 0x46000, send next 0x50280
+imgdb_sendimage: received ack: 0x4b000, unacked was: 0x48800, send next 0x50280
+imgdb_sendimage: received ack: 0x4d800, unacked was: 0x4b000, send next 0x50280
+imgdb_sendimage: received ack: 0x50000, unacked was: 0x4d800, send next 0x50280
+imgdb_sendimage: received ack: 0x50280, unacked was: 0x50000, send next 0x50280
+imgdb_sendimage: sent FIN (0xfffffffe), unacked: 0x50280
+
+
