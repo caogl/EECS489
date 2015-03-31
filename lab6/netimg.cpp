@@ -340,7 +340,7 @@ netimg_recvimg(void)
 
     if(fec_num>0) // at least one FEC window lost
     {
-      fec_start+=fwnd*datasize;
+      fec_start+=(num*fwnd*datasize);
       fec_count=1;
       if(pos>0) // besides, at least one data segment lost
         fec_lost=fec_start;
