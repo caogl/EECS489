@@ -118,7 +118,10 @@ int imgdb::handleqry()
 
     /* very important to close the td_tmp descriptor here, 
        if not, subsequent image transfer between peers cannot succeed, 
-      connect to the other image socket for image transfer takes forever*/
+       connect to the other image socket for image transfer takes forever
+      ----> because a tcp socket is identified by source+destination
+            address+port tuples, cannot estabilish the same one without 
+            closing the previous one !!!*/
     close(td_tmp);                   
     close(td);
     td=PR_UNINIT_SD;
