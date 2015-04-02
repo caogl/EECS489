@@ -439,7 +439,7 @@ sendimg(int sd, imsg_t *imsg, char *image, long img_size, int numseg)
       }
        
       /* PA3: YOUR CODE HERE */
-    } while ((int) snd_next < img_size); // PA3 Task 2.2: replace the '1' with your condition for detecting 
+    } while ((int)window_base<img_size); // PA3 Task 2.2: replace the '1' with your condition for detecting 
     // that all segments sent have been acknowledged
     
     /* PA3 Task 2.2: after the image is sent send a NETIMG_FIN packet
