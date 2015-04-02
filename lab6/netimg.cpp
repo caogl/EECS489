@@ -417,8 +417,7 @@ netimg_recvimg(void)
       exit(1);
     }
 
-    // if one FEC window segment is missing
-
+    // if one data segment within this FEC window is missing
     if(snd_next!=fec_next)
     {
       fec_lost=fec_next;
