@@ -22,6 +22,7 @@
 #include <assert.h>        // assert()
 #include <limits.h>        // LONG_MAX, INT_MAX
 #include <iostream>
+#include <algorithm>
 using namespace std;
 #ifdef _WIN32
 #include <winsock2.h>
@@ -166,16 +167,9 @@ marshall_imsg(imsg_t *imsg)
 char imgdb::
 recvqry(int sd, iqry_t *iqry)
 {
-  int bytes;  // stores the return value of recvfrom()
-
-  /*
-   * Lab5 Task 1: Call recvfrom() to receive the iqry_t packet from
-   * client.  Store the client's address and port number in the
-   * imgdb::client member variable and store the return value of
-   * recvfrom() in local variable "bytes".
-  */
-  /* Lab5: YOUR CODE HERE */
-  
+  int len = sizeof(struct sockaddr_in);
+  int bytes = recvfrom(sd, iqry, sizeof(iqry_t), 0, (struct sockaddr*)&client, (socklen_t *)&len);
+ 
   if (bytes != sizeof(iqry_t)) {
     return(NETIMG_ESIZE);
   }
@@ -220,6 +214,33 @@ sendpkt(int sd, char *pkt, int size, ihdr_t *ack)
    */
   /* PA3: YOUR CODE HERE */
 
+  fd_set rset;
+  struct timeval tv;
+  FD_ZERO(&rset);
+  FD_SET(sd, &rset);  
+  socklen_t len=sizeof(struct sockaddr_in);
+
+  int try_count=0;
+  while(try_count<NETIMG_MAXTRIES)
+  {
+    int bytes = sendto(sd, pkt, size, 0, (struct sockaddr*)&client, len);
+    net_assert((bytes<0), "imgdb_sendpkt: send error"); 
+
+    tv.tv_sec = NETIMG_SLEEP;
+    tv.tv_usec = NETIMG_USLEEP;
+    select(sd+1, &rset, NULL, NULL, &tv);
+    if(FD_ISSET(sd, &rset))
+    {
+      int err=recvfrom(sd, ack, sizeof(ihdr_t), 0, (struct sockaddr*)&client, &len);
+      net_assert(err<0, "imgdb_sendpkt: recv error");
+      if(ack->ih_vers == NETIMG_VERS && ack->ih_type == NETIMG_ACK)
+      {
+        ack->ih_seqn = ntohl(ack->ih_seqn);
+        return (bytes);
+      }
+    }
+    try_count++;
+  }
   return(0);
 }
 
@@ -238,12 +259,11 @@ sendpkt(int sd, char *pkt, int size, ihdr_t *ack)
  * Doesn't otherwise modify anything.
 */
 void imgdb::
-sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
+sendimg(int sd, imsg_t *imsg, unsigned char *image, long img_size, int numseg)
 {
-  int bytes, datasize;
-  char *ip;
+  int left, bytes, segsize;
+  unsigned char *ip;
   ihdr_t ack;
-
   /* Prepare imsg for transmission: fill in im_vers and convert
    * integers to network byte order before transmission.  Note that
    * im_type is set by the caller and should not be modified.  Send
@@ -256,18 +276,26 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
 
   // send the imsg packet to client by calling sendpkt().
   bytes = sendpkt(sd, (char *) imsg, sizeof(imsg_t), &ack);
-  if ((bytes != sizeof(imsg_t)) || (ack.ih_seqn != NETIMG_SYNSEQ)) {
+  if ((bytes != sizeof(imsg_t)) || (ack.ih_seqn != NETIMG_SYNSEQ)) 
+  {
+    fprintf(stderr, "sendpkt failed");
     return;
   }
 
-  if (image) {
+  if (image) 
+  {
     ip = image; /* ip points to the start of image byte buffer */
-    datasize = mss - sizeof(ihdr_t) - NETIMG_UDPIP;
+    int datasize = mss - sizeof(ihdr_t) - NETIMG_UDPIP;
+
+    unsigned int snd_next=0;
+    int fec_count=0; // how many segmants in this fec block has sent
 
     /* Lab5 Task 1:
      * make sure that the send buffer is of size at least mss.
      */
     /* Lab5: YOUR CODE HERE */
+    int bufsize = (int)mss;
+    setsockopt(sd, SOL_SOCKET,SO_SNDBUF,&bufsize,sizeof(int));
 
     /* Lab5 Task 1:
      *
@@ -278,13 +306,31 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * re-used for each chunk of data to be sent.
      */
     /* Lab5: YOUR CODE HERE */
+    ihdr_t ihdr;
+    ihdr.ih_vers = NETIMG_VERS;
+    ihdr.ih_type = NETIMG_DATA;
+
+    struct iovec iov[NETIMG_NUMIOV];
+    iov[0].iov_base = &ihdr;
+    iov[0].iov_len = sizeof(ihdr_t);
+    struct msghdr mh;
+    mh.msg_name = &client;
+    mh.msg_namelen = sizeof(struct sockaddr_in);
+    mh.msg_iov = iov;
+    mh.msg_iovlen = NETIMG_NUMIOV;
+    mh.msg_control = NULL;
+    mh.msg_controllen = 0; 
 
     /* PA3 Task 2.2 and Task 4.1: initialize any necessary variables
      * for your sender side sliding window and FEC window.
      */
     /* PA3: YOUR CODE HERE */
+    unsigned char FEC[datasize]; // FEC window 
+    unsigned int window_base=0;
+    int usable=rwnd;
 
-    do {
+    do 
+    {
       /* PA3 Task 2.2: estimate the receiver's receive buffer based on packets
        * that have been sent and ACKed, including outstanding FEC packet(s).
        * We can only send as much as the receiver can buffer.
@@ -315,10 +361,82 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
        * data is dropped.
        */
       /* PA3: YOUR CODE HERE */
-      
+      while(usable>0)
+      {
+        if(fec_count<fwnd && (int)snd_next<img_size)
+        {
+          left=img_size-snd_next;
+          segsize=datasize>left ? left : datasize;
+
+          if(fec_count>0)
+            fec_accum(FEC, ip+snd_next, datasize, (int)segsize);
+          else
+            fec_init(FEC, ip+snd_next, datasize, (int)segsize);
+
+          fec_count++;
+
+          /* probabilistically drop a segment */
+          if(((float) random())/INT_MAX < pdrop)
+            fprintf(stderr, "imgdb_sendimg: DROPPED offset 0x%x, %d bytes\n", snd_next, segsize);
+          else
+          { 
+            ihdr.ih_type = NETIMG_DATA;
+            ihdr.ih_size = htons(segsize);
+            ihdr.ih_seqn = htonl(snd_next);
+            iov[1].iov_base = ip+snd_next;
+            iov[1].iov_len = segsize;
+            if(sendmsg(sd, &mh, 0) == -1)
+            {
+              fprintf(stderr, "image socket sending error");
+              close(sd);
+              exit(1);
+            }
+            fprintf(stderr, "imgdb_sendimg: sent offset 0x%x, %d bytes, unacked: 0x%x\n", snd_next, segsize, window_base);
+          }
+
+          snd_next+=segsize;     
+          usable--;
+        }
+        else if(fec_count>0 && (fec_count==fwnd || (int)snd_next>=img_size))
+        {
+          /* probabilistically drop a FEC packet */
+          if (((float) random())/INT_MAX < pdrop)
+            fprintf(stderr, "imgdb_sendimg: DROPFEC offset 0x%x, segment count: %d bytes\n", snd_next, fec_count);
+          else
+          {
+            ihdr.ih_type = NETIMG_FEC;
+            ihdr.ih_size = htons(datasize);
+            ihdr.ih_seqn = htonl(snd_next);
+            iov[1].iov_base = FEC;
+            iov[1].iov_len = datasize;
+            if(sendmsg(sd, &mh, 0) == -1)
+            {
+              fprintf(stderr, "image socket sending error");
+              close(sd);
+              exit(1);
+            }
+            fprintf(stderr, "imgdb_sendimg: sent FEC offset 0x%x, segment count: %d\n", snd_next, fec_count);
+          }
+
+          fec_count = 0;
+          usable--;
+        }
+        else
+        {
+          // when fec_count is: 0, snd_next is: 0x111600, img_size is: 0x111600, enter this condition at the end of sending img
+          break;
+        }
+      }
+
       /* PA3 Task 2.2: Next wait for ACKs for up to NETIMG_SLEEP secs
          and NETIMG_USLEEp usec. */
       /* PA3: YOUR CODE HERE */
+      struct timeval tv;
+      tv.tv_sec = NETIMG_SLEEP;
+      tv.tv_usec = NETIMG_USLEEP;
+      fd_set rset;
+      FD_ZERO(&rset);
+      FD_SET(sd, &rset);      
       
       /* PA3 Task 2.2: If an ACK arrived, grab it off the network and slide
        * our window forward when possible. Continue to do so for all the
@@ -333,6 +451,26 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
        * calling the receive function.
        */
       /* PA3: YOUR CODE HERE */
+      select(sd+1, &rset, NULL, NULL, &tv);
+      socklen_t len = sizeof(struct sockaddr_in);
+      
+      if(FD_ISSET(sd, &rset))
+      {
+        while(1)
+        {
+          int err = recvfrom(sd, &ack, sizeof(ihdr_t), MSG_DONTWAIT, (struct sockaddr*)&client, &len);  
+          if(err == -1) 
+            break;
+          if (ack.ih_vers == NETIMG_VERS && ack.ih_type == NETIMG_ACK)
+          {
+            ack.ih_seqn=ntohl(ack.ih_seqn);
+            fprintf(stderr, "imgdb_sendimg: received ack 0x%x, unacked was 0x%x, send next 0x%x\n",
+                                              ack.ih_seqn, window_base, snd_next); 
+            window_base=max(window_base, ack.ih_seqn);
+            usable++;
+          }
+        }
+      }
       
       /* PA3 Task 2.2: If no ACK returned up to the timeout time,
        * trigger Go-Back-N and re-send all segments starting from the
@@ -341,16 +479,27 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
        * PA3 Task 4.1: If you experience RTO, reset your FEC window to
        * start at the segment to be retransmitted.
        */
+      else
+      {
+        fprintf(stderr, "imgdb_sendimg: RTO unacked 0x%x, next offset 0x%x\n", window_base, snd_next);
+        snd_next=window_base;
+        fec_count=0;
+        usable=rwnd;
+      }
+       
       /* PA3: YOUR CODE HERE */
-    } while (1); // PA3 Task 2.2: replace the '1' with your condition for detecting 
+    } while ((int)window_base<img_size); // PA3 Task 2.2: replace the '1' with your condition for detecting 
     // that all segments sent have been acknowledged
     
     /* PA3 Task 2.2: after the image is sent send a NETIMG_FIN packet
      * and wait for ACK, using imgdb::sendpkt().
      */
     /* PA3: YOUR CODE HERE */
-  }
-    
+    ihdr.ih_vers = NETIMG_VERS;
+    ihdr.ih_type = NETIMG_FIN;
+    ihdr.ih_seqn = htonl(NETIMG_FINSEQ);
+    sendpkt(sd, (char*)&ihdr, sizeof(ihdr_t), &ack); 
+  }  
   return;
 }
 
@@ -366,11 +515,12 @@ handleqry()
   double imgdsize;
 
   imsg.im_type = recvqry(sd, &iqry);
-  if (!imsg.im_type) {
+  if (!imsg.im_type) 
+  {
     imsg.im_type = readimg(iqry.iq_name, 1);
     
-    if (imsg.im_type == NETIMG_FOUND) {
-
+    if (imsg.im_type == NETIMG_FOUND) 
+    {
       mss = (unsigned short) ntohs(iqry.iq_mss);
       // Lab6:
       rwnd = iqry.iq_rwnd;
@@ -379,7 +529,7 @@ handleqry()
       imgdsize = marshall_imsg(&imsg);
       net_assert((imgdsize > (double) LONG_MAX),
                  "imgdb: image too big");
-      sendimg(sd, &imsg, (char *) curimg.GetPixels(),
+      sendimg(sd, &imsg, (unsigned char *) curimg.GetPixels(),
               (long)imgdsize, 0);
     } else {
       sendimg(sd, &imsg, NULL, 0, 0);

@@ -80,7 +80,7 @@
 
 // special seqno's for PA3:
 #define NETIMG_MAXSEQ  2147483647 // 2^31-1
-#define NETIMG_SYNSEQ  4294967294 // 2^32-1
+#define NETIMG_SYNSEQ  4294967293 // 2^32-1
 #define NETIMG_FINSEQ  4294967294 // 2^32-2
 
 typedef struct {                  // NETIMG_SYNQRY

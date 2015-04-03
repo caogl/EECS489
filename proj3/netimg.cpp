@@ -23,6 +23,7 @@
 #include <limits.h>        // LONG_MAX
 #include <math.h>          // ceil()
 #include <errno.h>
+#include <algorithm>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>      // socklen_t
@@ -43,6 +44,7 @@
 #else
 #include <GL/glut.h>
 #endif
+using namespace std;
 
 #include "netimg.h"
 #include "socks.h"
@@ -55,9 +57,15 @@ unsigned char *image;
 unsigned short mss;       // receiver's maximum segment size, in bytes
 unsigned char rwnd;       // receiver's window, in packets, of size <= mss
 unsigned char fwnd;       // Lab6: receiver's FEC window < rwnd, in packets
+
+int fec_count; // how many data segments has been received in this fec window
+unsigned int fec_start; // starting byte position of current fec window
+unsigned int fec_next; // starting byte position of next expected data segment
+unsigned int fec_lost; // the first lost data segment in this fec window
+
 // PA3: for ACKs
 float pdrop;
-unsigned int next_seqn;
+bool mode; // whether the client is in go back N mode or not
 
 /*
  * netimg_args: parses command line args.
@@ -196,23 +204,22 @@ netimg_recvimsg()
     return(NETIMG_EVERS);
   }
 
-  if (imsg.im_type == NETIMG_FOUND) {
+  if (imsg.im_type == NETIMG_FOUND) 
+  {
     imsg.im_height = ntohs(imsg.im_height);
     imsg.im_width = ntohs(imsg.im_width);
     imsg.im_format = ntohs(imsg.im_format);
 
     imgdsize = (double) (imsg.im_height*imsg.im_width*(u_short)imsg.im_depth);
-    net_assert((imgdsize > (double) LONG_MAX), 
-               "netimg_recvimsg: image too big");
+    net_assert((imgdsize > (double) LONG_MAX), "netimg_recvimsg: image too big");
     img_size = (long) imgdsize;                 // global
 
-    /* PA3 Task 2.1:
-     *
-     * Send back an ACK with ih_type = NETIMG_ACK and ih_seqn =
-     * NETIMG_SYNSEQ.  Initialize any variable necessary to keep track
-     * of ACKs.
-     */
-    /* PA3: YOUR CODE HERE */
+    ihdr_t ack;
+    ack.ih_vers = NETIMG_VERS;
+    ack.ih_type = NETIMG_ACK;
+    ack.ih_seqn = htonl(NETIMG_SYNSEQ); 
+    bytes=send(sd, &ack, sizeof(ihdr_t), 0);
+    net_assert(bytes<0, "netimg_recvims: send ACK error");
   }
 
   return((char) imsg.im_type);
@@ -230,215 +237,202 @@ netimg_recvimsg()
 void
 netimg_recvimg(void)
 {
-  ihdr_t hdr;  // memory to hold packet header
-   
-  /* 
-   * Lab5 Task 2:
-   * 
-   * The image data packet from the server consists of an ihdr_t
-   * header followed by a chunk of data.  We want to put the data
-   * directly into the buffer pointed to by the global variable
-   * "image" without any additional copying. To determine the correct
-   * offset from the start of the buffer to put the data into, we
-   * first need to retrieve the sequence number stored in the packet
-   * header.  Since we're dealing with UDP packet, however, we can't
-   * simply read the header off the network, leaving the rest of the
-   * packet to be retrieved by subsequent calls to recv(). Instead, we
-   * call recv() with flags == MSG_PEEK.  This allows us to retrieve a
-   * copy of the header without removing the packet from the receive
-   * buffer.
-   *
-   * Since our socket has been set to non-blocking mode, if there's no
-   * packet ready to be retrieved from the socket, the call to recv()
-   * will return immediately with return value -1 and the system
-   * global variable "errno" set to EAGAIN or EWOULDBLOCK (defined in
-   * errno.h).  In which case, this function should simply return to
-   * caller.
-   * 
-   * Once a copy of the header is made to the local variable "hdr",
-   * check that it has the correct version number and that it is of
-   * type NETIMG_DATA (use bitwise '&' as NETIMG_FEC is also of type
-   * NETIMG_DATA).  Terminate process if any error is encountered.
-   * Otherwise, convert the size and sequence number in the header
-   * to host byte order.
-   */
-  /* Lab5: YOUR CODE HERE */
+  ihdr_t ihdr;  // memory to hold packet header
+  int err = recv(sd, &ihdr, sizeof(ihdr_t), MSG_PEEK);
+  if (err == -1 || ihdr.ih_vers != NETIMG_VERS)
+    return;  
 
-  /* Lab5 Task 2
-   *
-   * Populate a struct msghdr with a pointer to a struct iovec
-   * array.  The iovec array should be of size NETIMG_NUMIOV.  The
-   * first entry of the iovec should be initialized to point to the
-   * header above, which should be re-used for each chunk of data
-   * received.
-   */
-  /* Lab5: YOUR CODE HERE */
+  int segsize = ntohs(ihdr.ih_size);
+  unsigned int snd_next = ntohl(ihdr.ih_seqn);
 
-  /* Task 2.3: initialize your ACK packet */
+  int datasize = mss - sizeof(ihdr_t) - NETIMG_UDPIP; // maximum bytes of a data or FEC packet
+  int fec_num=(snd_next-fec_start)/(fwnd*datasize); // the number of FEC windows passed
 
-  if (hdr.ih_type == NETIMG_DATA) {
-    /* 
-     * Lab5 Task 2
-     *
-     * Now that we have the offset/seqno information from the packet
-     * header, point the second entry of the iovec to the correct
-     * offset from the start of the image buffer pointed to by the
-     * global variable "image".  Both the offset/seqno and the size of
-     * the data to be received into the image buffer are recorded in
-     * the packet header retrieved above. Receive the segment "for
-     * real" (as opposed to "peeking" as we did above) by calling
-     * recvmsg().  We'll be overwriting the information in the "hdr"
-     * local variable, so remember to convert the size and sequence
-     * number in the header to host byte order again.
-     */
-    /* Lab5: YOUR CODE HERE */
+  struct iovec iov[NETIMG_NUMIOV];
+  iov[0].iov_base = &ihdr;
+  iov[0].iov_len = sizeof(ihdr_t);
+  struct msghdr mh;
+  mh.msg_name = NULL;
+  mh.msg_namelen = 0;
+  mh.msg_iov = iov;
+  mh.msg_iovlen = NETIMG_NUMIOV;
+  mh.msg_control = NULL;
+  mh.msg_controllen = 0;
 
-    // PA3: added next_seqn
-    fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes, waiting for 0x%x\n", hdr.ih_seqn, hdr.ih_size, next_seqn);
-            
-    /* Lab6 Task 2
-     *
-     * You should handle the case when the FEC data packet itself may be
-     * lost, and when multiple packets within an FEC window are lost, and
-     * when the first few packets from the subsequent FEC window following a
-     * lost FEC data packet are also lost.  Thus in addition to relying on
-     * fwnd and the count of total packets received within an FEC
-     * window, you may want to rely on the sequence numbers in arriving
-     * packets to determine when you have received an FEC-window full of data
-     * bytes.
-     *
-     * To that end, in addition to keeping track of lost packet offset
-     * below, every time a data packet arrives, first check whether
-     * you have received an FEC-window full (or more) of data bytes
-     * without receiving any FEC packet.  In which case, you need to
-     * reposition your FEC window by computing the start of the
-     * current FEC window, reset your count of packets received, and
-     * determine the next expected packet.
-     */
-    /* Lab6: YOUR CODE HERE */
+  ihdr_t ack;
+  ack.ih_vers = NETIMG_VERS;
+  ack.ih_type = NETIMG_ACK;
 
-    /* PA3: Task 4.2: 
-     *
-     * Next check whether the arriving data packet is the next data
-     * packet you're expecting.  If so, we are not in Go-Back-N
-     * retransmission mode, so we should increment our next expected
-     * packet within the FEC window and if we were in Go-Back-N
-     * retransmission mode, take ourselves out of it.  If the gap
-     * between the arriving data packet and the start of the FEC
-     * window is larger than an FEC window, we have lost an FEC
-     * packet, but we haven't lost any data packet, so just slide the
-     * FEC window forward by updating the relevant FEC variables.
-     *
-     * If arrving data packet is not the expected packet, we've 
-     * lost one or more segments, mark the location of the first
-     * lost segment (i.e., the next packet you're expecting).
-     * If more than one segments are lost, you don't need to
-     * mark subsequent losses, just keep a count of the total number
-     * of segments received.  If arriving data packet has sequence
-     * number within the current fwnd, increment count, otherwise, pkt
-     * was out of order, don't increment count.  If we have lost 
-     * two or more consecutive data packets, immediately put the client
-     * in Go-Back-N mode and reset the FEC window to start from the
-     * expected next sequence number.
-     *
-     * If the gap between the start of the FEC window and the current
-     * byte is larger than an FEC-widow full of data, we have lost an
-     * FEC packet and at least one data segment.  Since the FEC packet
-     * is lost, there's no way for us to recover the lost data
-     * segment(s) and Go-Back-N will be triggered and we should ride
-     * it out by putting ourselves into Go-Back-N mode and not rely on
-     * FEC until the expected segment has been retransmitted and
-     * received. Reset the FEC window to start from the
-     * expected next sequence number.
-     *
-     * Everytime we slide forward or reset the FEC window, check whether
-     * we're at the last FEC window of the transmission.  If so, update
-     * the FEC window size (imgdb::fwnd member variable) and other
-     * relevant variables accordingly.
-     */
-    /* PA3: YOUR CODE HERE */
+  if (ihdr.ih_type == NETIMG_DATA)
+  {
+    iov[1].iov_base = image+snd_next;;
+    iov[1].iov_len = segsize;
 
-    /* PA3 Task 4.2: If we're not in Go-Back-N mode, keep track of packet
-       received within the current FEC window */
-    /* PA3: YOUR CODE HERE */
+    fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes, waiting for 0x%x\n",
+                                       snd_next, segsize, fec_next);     
+    if (recvmsg(sd, &mh, 0) == -1)
+    {
+      close(sd);
+      fprintf(stderr, "recv img error");
+      exit(1);
+    }
+    if(mode)
+    {
+      if(fec_next==snd_next) // take the client out of go back N mode
+      {
+        fprintf(stderr, "netimg_recvims: out of gbn.\n");
+        mode=false;
 
-    /* PA3 Task 2.3: If the incoming data packet carries the expected
-     * sequence number, update our expected sequence number.  In all
-     * cases, prepare to send back an ACK packet with the next
-     * expected sequence number, to ensure that the sender knows what
-     * our current expectation is.
-     */
-    /* PA3: YOUR CODE HERE */
-      
-  } else if (hdr.ih_type == NETIMG_FEC) { // FEC pkt
+        fec_count++;
+        fec_next=snd_next+segsize;
+        fec_lost=fec_next;
+      }
+    }
 
-    /* 
-     * Re-use the same struct msghdr above to receive an FEC packet.
-     * Point the second entry of the iovec to your FEC data buffer and
-     * update the size accordingly.
-     * Receive the segment by calling recvmsg().
-     *
-     * Convert the size and sequence number in the header to host byte order.
-     *
-     * This is an adaptation of your Lab 5 code.
-     */
-    /* Lab 6: YOUR CODE HERE */
+    else
+    {
+      /* --------------- at least one FEC window lost --------------- */
+      if(fec_num>0) 
+      {
+        //(1): if we have received FEC window full of consecutive data 
+        if(fec_count==fwnd)
+        {
+          fec_start+=fwnd*datasize; 
+          fec_lost=fec_start;
 
-    /* 
-     * PA3 Task 4.2: If you're not in Go-Back-N mode, do as in Lab6:
-     *
-     * Check if you've lost only one packet within the FEC window, if
-     * so, reconstruct the lost packet.  Remember that we're using the
-     * image data buffer itself as our FEC buffer and that you've
-     * noted above the sequence number that marks the start of the
-     * current FEC window.  To reconstruct the lost packet, use
-     * fec.cpp:fec_accum() to XOR the received FEC data against the
-     * image data buffered starting from the start of the current FEC
-     * window, one <tt>datasize</tt> at a time, skipping over the lost
-     * segment, until you've reached the end of the FEC window.  If
-     * fec_accum() has been coded correctly, it should be able to
-     * correcly handle the case when the last segment of the
-     * FEC-window is smaller than datasize *(but you must still do the
-     * detection for short last segment here and provide fec_accum()
-     * with the appropriate segsize)*.
-     *
-     * Once you've reconstructed the lost segment, copy it from the
-     * FEC data buffer to correct offset on the image buffer.  You
-     * must be careful that if the lost segment is the last segment of
-     * the image data, it may be of size smaller than datasize, in
-     * which case, you should copy only the correct amount of bytes
-     * from the FEC data buffer to the image data buffer.
-     *
-     * PA3 Task 4.2: After you've patched the lost packet, send back
-     * an ACK for the last byte received within this FEC window.
-     *
-     * If no packet was lost in the current FEC window, there's
-     * nothing further to do with the current FEC window, just move on
-     * to the next one.
-     *
-     * PA3 Task 4.2: If more than 1 pkts were lost within the current
-     * FEC window, put yourself in Go-Back-N mode.
-     *
-     * Before you move on to the next FEC window, reset your
-     * FEC-window related variables to prepare for the processing of
-     * the next window. Remember to check if the next FEC window is
-     * the last window of the transmission.
-     */
-    /* PA3: YOUR CODE HERE */  // modifying Lab6 code
+          if(snd_next==fec_next) // no data segment missing within next FEC window
+          { 
+            fec_next=snd_next+segsize;
+            fec_lost=fec_next;
+            fec_count=1;
+          }
+          else if(snd_next==fec_next+segsize) // missing the first data segment in the next FEC window       
+          {
+            fec_next=snd_next+segsize;
+            fec_count=1;
+          }
+          else // missing more than one consecutive data segement in the next FEC window, trigger go back N mode
+          {
+            fprintf(stderr, "in gbn: consecutive losses or fec loss.\n");
+            mode=true;
 
-  } else {  // NETIMG_FIN pkt
+            fec_count=0;
+            fec_next=fec_lost;
+          }
+        }
+        //(2): the previous FEC window lost at least one data segment, unable to recover, trigger go back N mode
+        else
+        {
+          fprintf(stderr, "in gbn: consecutive losses or fec loss.\n");
+          mode=true;
 
-    /* PA3 Task 2.3: else it's a NETIMG_FIN packet, prepare to send
-       back an ACK with NETIMG_FINSEQ as the sequence number */
-    /* PA3 YOUR CODE HERE */ 
+          fec_start=fec_lost;
+          fec_next=fec_lost;
+          fec_count=0;
+        }
+      }
+      /* --------------- no indication of FEC window lost, within same FEC window --------------- */
+      else
+      {
+        if(snd_next==fec_next) // if it is the expected data segment
+        {
+          fec_next=snd_next+segsize;
+          fec_count++;
+          if(snd_next==fec_lost)
+            fec_lost=fec_next;
+        }
+        else if(snd_next==fec_next+segsize) // if only one consecutive data segment loss
+        {
+          fec_next=snd_next+segsize;
+          fec_count++;
+        }
+        else // if more than one consecutive data segment loss
+        {
+          fprintf(stderr, "in gbn: consecutive losses or fec loss.\n");
+          mode=true;
+
+          fec_start=fec_lost;
+          fec_next=fec_lost;
+          fec_count=0;
+        }
+      }
+    }
+    ack.ih_seqn=htonl(fec_lost);
+  } 
+
+  else if (ihdr.ih_type == NETIMG_FEC) // FEC pkt
+  { 
+    unsigned char FEC[datasize];
+    iov[1].iov_base = FEC;
+    iov[1].iov_len = datasize;
+
+    if(recvmsg(sd, &mh, 0)==-1)
+    {
+      close(sd);
+      fprintf(stderr, "recv img error");
+      exit(1);
+    }
+    fprintf(stderr, "netimg_recvimg: received FEC offset: 0x%x, start: 0x%x, lost: 0x%x, count: %d\n", snd_next, fec_start, (fec_count>=fwnd) ? snd_next:fec_lost, fec_count);
+
+    if(!mode)
+    {
+      //(1): lost one singel packet within this FEC window range, patch the lost one
+      if(fec_count==fwnd-1) // reconstruct the lost packet
+      {
+        for (unsigned int j=fec_start; j<snd_next; j += datasize)
+          if (j!=fec_lost)
+            fec_accum(FEC, image+j, datasize, std::min(datasize, (int)img_size-(int)j));
+        memcpy(image+fec_lost, FEC, min(datasize, (int)img_size-(int)fec_lost));
+        fprintf(stderr, "netimg_recvimg: FEC patched offset: 0x%x, start: 0x%x, count: %d\n", snd_next, fec_start, fec_count);
+
+        fec_start=snd_next;
+        fec_next=snd_next;
+        fec_count = 0;
+        fec_lost=fec_start;
+        ack.ih_seqn=htonl(fec_lost);
+      }
+      //(2): lost no packet within this FEC window range, throw away the FEC data, no ACK
+      else if(fec_count==fwnd)
+      {
+        fec_start=snd_next;
+        fec_next=snd_next;
+        fec_count = 0;
+        fec_lost=fec_start;
+        return;
+      }
+      //(3): lost more than one packet within this FEC window lost, trigger go back N mode
+      else
+      {
+        mode=true;
+        fprintf(stderr, "netimg_recvimg: in gbn: multiple losses per fwnd.\n");
+
+        fec_start=fec_lost;
+        fec_next=fec_start;
+        fec_count=0;
+        ack.ih_seqn=htonl(fec_lost);
+ 
+        return;
+      } 
+    }
+
+    else // if in go back N mode and receives a FEC window packet, do nothing
+      return;
+  } 
+  else 
+  {  // NETIMG_FIN pkt
+    /* must recv here because of MSG_PEEK recv before!!, or would be to infinite loop!! */
+    recv(sd, &ihdr, sizeof(ihdr_t), 0); 
+    ack.ih_seqn=htonl(NETIMG_FINSEQ);
   }
 
-  /* PA3 Task 2.3:
-   * If we're to send back an ACK, send it now.  Probabilistically
-   * drop the ACK instead of sending it back (see how this is done in
-   * imgdb.cpp).
-   */ 
-  /* PA3: YOUR CODE HERE */
+  if (((float) random())/INT_MAX < pdrop)
+    fprintf(stderr, "netimg_recvimg: ack dropped 0x%x\n", ntohl(ack.ih_seqn));
+  else
+  {
+    err = send(sd, &ack , sizeof(ihdr_t), 0);
+    net_assert(err<0, "send ACK error");
+    fprintf(stderr, "netimg_recvimg: ack sent 0x%x\n", ntohl(ack.ih_seqn));
+  }
   
   /* give the updated image to OpenGL for texturing */
   glTexImage2D(GL_TEXTURE_2D, 0, (GLint) imsg.im_format,
@@ -453,6 +447,12 @@ netimg_recvimg(void)
 int
 main(int argc, char *argv[])
 {
+  fec_count=0;
+  fec_start=0;
+  fec_next=0;
+  fec_lost=0;
+  mode=false;
+
   int err;
   char *sname, *imgname;
   u_short port;
@@ -477,7 +477,8 @@ main(int argc, char *argv[])
       netimg_imginit(imsg.im_format);
       
       /* Lab5 Task 2: set socket non blocking */
-      /* Lab5: YOUR CODE HERE */
+      int nonblocking = 1;
+      ioctl(sd, FIONBIO, &nonblocking);
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {

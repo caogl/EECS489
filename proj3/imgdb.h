@@ -63,7 +63,7 @@ public:
   char recvqry(int sd, iqry_t *iqry);
   double marshall_imsg(imsg_t *imsg);
   int sendpkt(int sd, char *pkt, int size, ihdr_t *ack);
-  void sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg);
+  void sendimg(int sd, imsg_t *imsg, unsigned char *image, long img_size, int numseg);
 };  
 
 #endif /* __IMGDB_H__ */
