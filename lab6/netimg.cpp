@@ -262,8 +262,9 @@ netimg_recvimg(void)
    */
   /* Lab5: YOUR CODE HERE */
   int err = recv(sd, &ihdr, sizeof(ihdr_t), MSG_PEEK);
-  assert(err>=0);
-
+  if (err == -1 || ihdr.ih_vers != NETIMG_VERS || ihdr.ih_type != NETIMG_DATA)
+    return;
+  
   segsize = ntohs(ihdr.ih_size);
   unsigned int snd_next = ntohl(ihdr.ih_seqn);
 
@@ -340,7 +341,7 @@ netimg_recvimg(void)
 
     if(fec_num>0) // at least one FEC window lost
     {
-      fec_start+=(fec_num*fwnd*datasize);
+      fec_start+=(pos*fwnd*datasize);
       fec_count=1;
       if(pos>0) // besides, at least one data segment lost
         fec_lost=fec_start;
@@ -417,7 +418,8 @@ netimg_recvimg(void)
       exit(1);
     }
 
-    // if one data segment within this FEC window is missing
+    // if one FEC window segment is missing
+
     if(snd_next!=fec_next)
     {
       fec_lost=fec_next;
@@ -438,7 +440,7 @@ netimg_recvimg(void)
     fec_count = 0;
     fec_lost=fec_start;
   }
-
+  
   /* give the updated image to OpenGL for texturing */
   glTexImage2D(GL_TEXTURE_2D, 0, (GLint) imsg.im_format,
                (GLsizei) imsg.im_width, (GLsizei) imsg.im_height, 0,
@@ -482,6 +484,8 @@ main(int argc, char *argv[])
       
       /* Lab5 Task 2: set socket non blocking */
       /* Lab5: YOUR CODE HERE */
+      int nonblocking = 1;
+      ioctl(sd, FIONBIO, &nonblocking);
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {
