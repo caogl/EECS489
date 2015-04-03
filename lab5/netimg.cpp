@@ -255,8 +255,9 @@ netimg_recvimg(void)
    */
   /* Lab5: YOUR CODE HERE */
   int err = recv(sd, &ihdr, sizeof(ihdr_t), MSG_PEEK);
-  assert(err>=0);
-
+  if (err == -1 || ihdr.ih_vers != NETIMG_VERS || ihdr.ih_type != NETIMG_DATA)
+    return;
+  
   segsize = ntohs(ihdr.ih_size);
   snd_next = ntohl(ihdr.ih_seqn);
 
@@ -283,8 +284,7 @@ netimg_recvimg(void)
     iov[1].iov_base = image+snd_next;;
     iov[1].iov_len = segsize;
     
-    fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n",
-            ihdr.ih_seqn, ihdr.ih_size);
+    fprintf(stderr, "netimg_recvimg: received offset 0x%x, %d bytes\n", snd_next, segsize);
 
     struct msghdr mh;
     mh.msg_name = NULL;
@@ -415,6 +415,8 @@ main(int argc, char *argv[])
       
       /* Lab5 Task 2: set socket non blocking */
       /* Lab5: YOUR CODE HERE */
+      int nonblocking = 1;
+      ioctl(sd, FIONBIO, &nonblocking);
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {
