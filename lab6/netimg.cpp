@@ -262,7 +262,7 @@ netimg_recvimg(void)
    */
   /* Lab5: YOUR CODE HERE */
   int err = recv(sd, &ihdr, sizeof(ihdr_t), MSG_PEEK);
-  if (err == -1 || ihdr.ih_vers != NETIMG_VERS || ihdr.ih_type != NETIMG_DATA)
+  if (err == -1 || ihdr.ih_vers != NETIMG_VERS)
     return;
   
   segsize = ntohs(ihdr.ih_size);
