@@ -482,8 +482,6 @@ main(int argc, char *argv[])
       
       /* Lab5 Task 2: set socket non blocking */
       /* Lab5: YOUR CODE HERE */
-      int nonblocking = 1;
-      ioctl(sd, FIONBIO, &nonblocking);
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {
