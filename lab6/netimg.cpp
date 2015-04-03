@@ -269,7 +269,7 @@ netimg_recvimg(void)
 
   int datasize = mss - sizeof(ihdr_t) - NETIMG_UDPIP; // maximum bytes of a data or FEC packet
   int fec_num=(snd_next-fec_start)/(fwnd*datasize); // the number of FEC windows passed
-  unsigned int pos=(snd_next-fec_start)/(fwnd*datasize); // the position of current segment
+  unsigned int pos=(snd_next-fec_start)%(fwnd*datasize); // the position of current segment
 
   struct iovec iov[NETIMG_NUMIOV];
   iov[0].iov_base = &ihdr;
@@ -482,6 +482,8 @@ main(int argc, char *argv[])
       
       /* Lab5 Task 2: set socket non blocking */
       /* Lab5: YOUR CODE HERE */
+      int nonblocking = 1;
+      ioctl(sd, FIONBIO, &nonblocking);
 
       glutMainLoop(); /* start the GLUT main loop */
     } else if (err == NETIMG_NFOUND) {
