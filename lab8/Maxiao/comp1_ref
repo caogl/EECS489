@@ -1,0 +1,163 @@
+imgdb address is caen-vnc14.engin.umich.edu:53942
+Image: 
+     Type   = Greyscale (3)
+     Width  = 640
+     Height = 513
+Pixel depth = 8
+Alpha depth = 0
+RL encoding  = 0
+WFQ::addflow: flow 0 added, flow rate: 1024, link reserved rate: 1024
+Image: 
+     Type   = RGB (1)
+     Width  = 864
+     Height = 432
+Pixel depth = 24
+Alpha depth = 0
+RL encoding  = 0
+WFQ::addflow: flow 1 added, flow rate: 1024, link reserved rate: 2048
+Flow::sendpkt: flow 0: sent offset 0x0, Fi: 0.015625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x0, Fi: 0.015625, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x2800, Fi: 0.031250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x2800, Fi: 0.031250, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x5000, Fi: 0.046875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x5000, Fi: 0.046875, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x7800, Fi: 0.062500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x7800, Fi: 0.062500, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0xa000, Fi: 0.078125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xa000, Fi: 0.078125, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0xc800, Fi: 0.093750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xc800, Fi: 0.093750, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0xf000, Fi: 0.109375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xf000, Fi: 0.109375, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x11800, Fi: 0.125000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x11800, Fi: 0.125000, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x14000, Fi: 0.140625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x14000, Fi: 0.140625, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x16800, Fi: 0.156250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x16800, Fi: 0.156250, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x19000, Fi: 0.171875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x19000, Fi: 0.171875, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x1b800, Fi: 0.187500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x1b800, Fi: 0.187500, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x1e000, Fi: 0.203125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x1e000, Fi: 0.203125, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x20800, Fi: 0.218750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x20800, Fi: 0.218750, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x23000, Fi: 0.234375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x23000, Fi: 0.234375, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x25800, Fi: 0.250000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x25800, Fi: 0.250000, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x28000, Fi: 0.265625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x28000, Fi: 0.265625, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x2a800, Fi: 0.281250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x2a800, Fi: 0.281250, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x2d000, Fi: 0.296875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x2d000, Fi: 0.296875, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x2f800, Fi: 0.312500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x2f800, Fi: 0.312500, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x32000, Fi: 0.328125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x32000, Fi: 0.328125, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x34800, Fi: 0.343750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x34800, Fi: 0.343750, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x37000, Fi: 0.359375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x37000, Fi: 0.359375, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x39800, Fi: 0.375000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x39800, Fi: 0.375000, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x3c000, Fi: 0.390625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x3c000, Fi: 0.390625, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x3e800, Fi: 0.406250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x3e800, Fi: 0.406250, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x41000, Fi: 0.421875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x41000, Fi: 0.421875, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x43800, Fi: 0.437500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x43800, Fi: 0.437500, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x46000, Fi: 0.453125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x46000, Fi: 0.453125, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x48800, Fi: 0.468750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x48800, Fi: 0.468750, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x4b000, Fi: 0.484375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x4b000, Fi: 0.484375, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x4d800, Fi: 0.500000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x4d800, Fi: 0.500000, 10240 bytes
+Flow::sendpkt: flow 0: sent offset 0x50000, Fi: 0.500977, 640 bytes
+WFQ::sendpkt: flow 0 done, elapsed time (m:s:ms:us): 0:0:2:628, link reserved rate: 1024
+Flow::sendpkt: flow 1: sent offset 0x50000, Fi: 0.507812, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x52800, Fi: 0.515625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x55000, Fi: 0.523438, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x57800, Fi: 0.531250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x5a000, Fi: 0.539062, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x5c800, Fi: 0.546875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x5f000, Fi: 0.554688, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x61800, Fi: 0.562500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x64000, Fi: 0.570312, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x66800, Fi: 0.578125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x69000, Fi: 0.585938, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x6b800, Fi: 0.593750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x6e000, Fi: 0.601562, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x70800, Fi: 0.609375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x73000, Fi: 0.617188, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x75800, Fi: 0.625000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x78000, Fi: 0.632812, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x7a800, Fi: 0.640625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x7d000, Fi: 0.648438, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x7f800, Fi: 0.656250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x82000, Fi: 0.664062, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x84800, Fi: 0.671875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x87000, Fi: 0.679688, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x89800, Fi: 0.687500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x8c000, Fi: 0.695312, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x8e800, Fi: 0.703125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x91000, Fi: 0.710938, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x93800, Fi: 0.718750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x96000, Fi: 0.726562, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x98800, Fi: 0.734375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x9b000, Fi: 0.742188, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x9d800, Fi: 0.750000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xa0000, Fi: 0.757812, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xa2800, Fi: 0.765625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xa5000, Fi: 0.773438, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xa7800, Fi: 0.781250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xaa000, Fi: 0.789062, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xac800, Fi: 0.796875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xaf000, Fi: 0.804688, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xb1800, Fi: 0.812500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xb4000, Fi: 0.820312, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xb6800, Fi: 0.828125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xb9000, Fi: 0.835938, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xbb800, Fi: 0.843750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xbe000, Fi: 0.851562, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xc0800, Fi: 0.859375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xc3000, Fi: 0.867188, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xc5800, Fi: 0.875000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xc8000, Fi: 0.882812, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xca800, Fi: 0.890625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xcd000, Fi: 0.898438, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xcf800, Fi: 0.906250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xd2000, Fi: 0.914062, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xd4800, Fi: 0.921875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xd7000, Fi: 0.929688, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xd9800, Fi: 0.937500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xdc000, Fi: 0.945312, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xde800, Fi: 0.953125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xe1000, Fi: 0.960938, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xe3800, Fi: 0.968750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xe6000, Fi: 0.976562, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xe8800, Fi: 0.984375, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xeb000, Fi: 0.992188, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xed800, Fi: 1.000000, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xf0000, Fi: 1.007812, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xf2800, Fi: 1.015625, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xf5000, Fi: 1.023438, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xf7800, Fi: 1.031250, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xfa000, Fi: 1.039062, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xfc800, Fi: 1.046875, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0xff000, Fi: 1.054688, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x101800, Fi: 1.062500, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x104000, Fi: 1.070312, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x106800, Fi: 1.078125, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x109000, Fi: 1.085938, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x10b800, Fi: 1.093750, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x10e000, Fi: 1.101562, 10240 bytes
+Flow::sendpkt: flow 1: sent offset 0x110800, Fi: 1.104297, 3584 bytes
+WFQ::sendpkt: flow 1 done, elapsed time (m:s:ms:us): 0:0:11:827, link reserved rate: 0
+
