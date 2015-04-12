@@ -23,6 +23,7 @@
 #include <assert.h>        // assert()
 #include <limits.h>        // LONG_MAX, INT_MAX
 #include <iostream>
+#include <algorithm>
 using namespace std;
 #ifdef _WIN32
 #include <winsock2.h>
@@ -30,6 +31,7 @@ using namespace std;
 #include "wingetopt.h"
 #else
 #include <string.h>        // memset(), memcmp(), strlen(), strcpy(), memcpy()
+#include <math.h>          // ceil()
 #include <unistd.h>        // getopt(), STDIN_FILENO, gethostname()
 #include <signal.h>        // signal()
 #include <netdb.h>         // gethostbyname(), gethostbyaddr()
@@ -258,7 +260,9 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
      * Initialize any token bucket filter variables you may have here.
     */
     /* Lab7 YOUR CODE HERE */
-    
+    float bavail=(float)bsize; // the available token number in the bucket
+    float bpseg=(float)(mss-sizeof(ihdr_t))/IMGDB_BPTOK; // the token number needed per segment, excluding headers
+
     /* 
      * make sure that the send buffer is of size at least mss.
      */
@@ -315,6 +319,14 @@ sendimg(int sd, imsg_t *imsg, char *image, long imgsize, int numseg)
        * Also decrement token bucket size when a segment is sent.
        */
       /* Lab7 YOUR CODE HERE */
+      if(bavail<bpseg)
+      {
+        float incre=bpseg-bavail+((float)random()/INT_MAX)*bsize;
+        fprintf(stderr, "imgdb:sendimg: accumulating tokens for %f\n", incre);
+        bavail=min(bsize, bavail+incre);
+        usleep(1000000*incre/trate);
+      }
+      bavail-=bpseg;
 
       /* 
        * With sufficient tokens in the token bucket, send one segment
@@ -391,6 +403,8 @@ handleqry()
        * Each token covers IMGDB_BPTOK bytes.
        */
       /* Lab7: YOUR CODE HERE */
+      bsize = ceil((double)(mss-sizeof(ihdr_t))*rwnd/IMGDB_BPTOK);
+      trate = (frate*1024)/(8*IMGDB_BPTOK);
       
       imgdsize = marshall_imsg(&imsg);
       net_assert((imgdsize > (double) LONG_MAX),
