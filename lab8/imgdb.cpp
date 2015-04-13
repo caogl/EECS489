@@ -225,7 +225,10 @@ nextFi(float multiplier)
   /* Replace the following return statement with your
      computation of the next finish time as indicated above
      and return the result instead. */
-  return(0.0);
+
+  //float duration = (segsize*8)/(1024*frate*multiplier);
+  float duration=segsize/(128*frate*multiplier);
+  return(duration+Fi);    
 }
 
 /*
@@ -472,22 +475,36 @@ handleqry()
      * imsg_t packet with im_type set to NETIMG_EFULL.
      */
     /* Task 1: YOUR CODE HERE */
-    
+    for(i = 0; i<IMGDB_MAXFLOW; i++)
+    {
+      if(!flow[i].in_use && iqry.iq_frate + rsvdrate <= linkrate)
+      {
+        nflow++;
+        rsvdrate += iqry.iq_frate;
+        flow[i].init(sd, &qhost, &iqry, &imsg, currFi);
+        fprintf(stderr, "imgdb:handleqry: flow %d added, flow rate: %d, reserved link rate: %d\n", i, iqry.iq_frate, rsvdrate);
+        break;
+      }
+    }
+
     /* Toggle the "started" member variable to on (1) if minflow number
      * of flows have arrived or total reserved rate is at link capacity
      * and set the start time of each flow to the current wall clock time.
      */
-    if (!started && (nflow >= minflow || rsvdrate >= linkrate)) {
+    if (!started && (nflow >= minflow || rsvdrate >= linkrate))
+    {
       started = 1;
-      for (i = 0; i < IMGDB_MAXFLOW; i++) {
-        if (flow[i].in_use) {
+      for (i = 0; i <IMGDB_MAXFLOW; i++) 
+      {
+        if(flow[i].in_use)
           gettimeofday(&flow[i].start, NULL);
-        }
       }
     }
+
   }
  
-  if (imsg.im_type != NETIMG_EAGAIN) {
+  if(imsg.im_type != NETIMG_EAGAIN)
+  {
     // inform qhost of error or image dimensions if no error.
     sendimsg(sd, &qhost, &imsg);
     return(1);
@@ -526,14 +543,26 @@ sendpkt()
   int done = 0;
 
   /* Task 3: YOUR CODE HERE */
+  for (int i = 0; i <IMGDB_MAXFLOW; i++)
+  {
+    if(flow[i].in_use && (fd==IMGDB_MAXFLOW || currFi>flow[i].nextFi((float)linkrate/rsvdrate)))
+    {
+      fd=i;
+      currFi=flow[i].nextFi((float)linkrate/rsvdrate);
+    }
+  }
+  done = flow[fd].sendpkt(sd, fd, currFi);
 
   if (done) {
+
     /* Task 4: When done sending, remove flow from flow[] by calling
      * Flow::done().  Deduct the flow's reserved rate (returned by
      * Flow::done()) from the total reserved rate, and decrement the
      * flow count.
     */
     /* Task 4: YOUR CODE HERE */
+    rsvdrate-=flow[fd].done();
+    nflow--;
 
     if (nflow <= 0) {
       started = 0;

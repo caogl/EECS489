@@ -38,7 +38,7 @@ void ReadData(std::ifstream &file, char* data, uint size)
 {
     if (!file.is_open())
         return;
-    uint a = file.tellg();
+    uint a = (uint) file.tellg();
     a+= size;
     file.read(data, size);
     if (a != uint(file.tellg()))

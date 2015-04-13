@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2014 University of Michigan, Ann Arbor.
+ * Copyright (c) 2014, 2015 University of Michigan, Ann Arbor.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -20,8 +20,11 @@
 #include <stdio.h>         // fprintf(), perror(), fflush()
 #include <stdlib.h>        // atoi()
 #include <assert.h>        // assert()
-#include <unistd.h>        // getopt(), STDIN_FILENO, gethostname()
-#include <signal.h>        // signal()
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <unistd.h>
+#endif
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -30,14 +33,16 @@
 
 #include "netimg.h"
 
-extern int sd;
 int wd;                   /* GLUT window handle */
 GLdouble width, height;   /* window width and height */
 
+extern char *image;
+extern long img_size;    
+
 void
-netimg_imginit()
+netimg_imginit(unsigned short format)
 {
-  int tod;
+  int i, tod;
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -50,6 +55,41 @@ netimg_imginit()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); 
   glEnable(GL_TEXTURE_2D);
+
+/* 
+#if PBO
+  int pbod;
+
+  glGenBuffers(1, (GLuint*) &pbod); 
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbod);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, img_size, NULL, GL_DYNAMIC_DRAW);  
+#else
+*/
+  image = (char *)calloc(img_size, sizeof(unsigned char));
+
+  /* determine pixel size */
+  switch(format) {
+  case GL_RGBA:
+    format = 4;
+    break;
+  case GL_RGB:
+    format = 3;
+    break;
+  case GL_LUMINANCE_ALPHA:
+    format = 2;
+    break;
+  default:
+    format = 1;
+    break;
+  }
+
+  /* paint the image texture background red if color, white
+     otherwise to better visualize lost segments */
+  for (i = 0; i < img_size; i += format) {
+    image[i] = (unsigned char) 0xff;
+  }
+
+  return;
 }
 
 /* Callback functions for GLUT */
@@ -60,10 +100,16 @@ netimg_display(void)
   /* If your image is displayed upside down, you'd need to play with the
      texture coordinate to flip the image around. */
   glBegin(GL_QUADS); 
-    glTexCoord2f(0.0,1.0); glVertex3f(0.0, height, 0.0);
+    glTexCoord2f(0.0,1.0); glVertex3f(0.0, 0.0, 0.0);
+    glTexCoord2f(0.0,0.0); glVertex3f(0.0, height, 0.0);
+    glTexCoord2f(1.0,0.0); glVertex3f(width, height, 0.0);
+    glTexCoord2f(1.0,1.0); glVertex3f(width, 0.0, 0.0);
+    /* alternate coordinates:
     glTexCoord2f(0.0,0.0); glVertex3f(0.0, 0.0, 0.0);
-    glTexCoord2f(1.0,0.0); glVertex3f(width, 0.0, 0.0);
+    glTexCoord2f(0.0,1.0); glVertex3f(0.0, height, 0.0);
     glTexCoord2f(1.0,1.0); glVertex3f(width, height, 0.0);
+    glTexCoord2f(1.0,0.0); glVertex3f(width, 0.0, 0.0);
+    */
   glEnd();
 
   glFlush();
@@ -93,10 +139,12 @@ netimg_kbd(unsigned char key, int x, int y)
   case 'q':
   case 27:
     glutDestroyWindow(wd);
+/* stdin is not a descriptor on Windows, so 'q' not supported
     close(sd);
 #ifdef _WIN32
     WSACleanup();
 #endif
+*/
     exit(0);
     break;
   default:
@@ -111,7 +159,7 @@ netimg_glutinit(int *argc, char *argv[], void (*idlefunc)())
 {
 
   width  = NETIMG_WIDTH;    /* initial window width and height, */
-  height = NETIMG_HEIGHT;         /* within which we draw. */
+  height = NETIMG_HEIGHT;   /* within which we draw. */
 
   glutInit(argc, argv);
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
