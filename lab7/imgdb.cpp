@@ -373,12 +373,12 @@ handleqry()
   imsg.im_type = recvqry(sd, &iqry);
   if (imsg.im_type) { // error
     sendimg(sd, &imsg, NULL, 0, 0);
-  } else {
-    
+  } 
+  else
+  {
     imsg.im_type = readimg(iqry.iq_name, 1);
-    
-    if (imsg.im_type == NETIMG_FOUND) {
-
+    if (imsg.im_type == NETIMG_FOUND) 
+    {
       mss = (unsigned short) ntohs(iqry.iq_mss);
       rwnd = iqry.iq_rwnd;
       frate = (unsigned short) ntohs(iqry.iq_frate);
@@ -417,18 +417,19 @@ handleqry()
       /* compute elapsed time */
       usecs = USECSPERSEC-start.tv_usec+end.tv_usec;
       secs = end.tv_sec - start.tv_sec - 1;
-      if (usecs > USECSPERSEC) {
+      if (usecs > USECSPERSEC) 
+      {
         secs++;
         usecs -= USECSPERSEC;
       }
       fprintf(stderr, "\nElapsed time (m:s:ms:us): %d:%d:%d:%d\n",
               secs/60, secs%60, usecs/1000, usecs%1000);
-      
-    } else {
+    } 
+    else 
+    {
       sendimg(sd, &imsg, NULL, 0, 0);
     }
   }
-
   return;
 }
 
