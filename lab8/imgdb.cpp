@@ -505,7 +505,6 @@ handleqry()
  
   if(imsg.im_type != NETIMG_EAGAIN)
   {
-    // inform qhost of error or image dimensions if no error.
     sendimsg(sd, &qhost, &imsg);
     return(1);
   }
