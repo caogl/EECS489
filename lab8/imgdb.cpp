@@ -226,7 +226,7 @@ nextFi(float multiplier)
      computation of the next finish time as indicated above
      and return the result instead. */
 
-  //float duration = (segsize*8)/(1024*frate*multiplier);
+  //float duration = segsize/((1024/8)*frate*multiplier);
   float duration=segsize/(128*frate*multiplier);
   return(duration+Fi);    
 }
