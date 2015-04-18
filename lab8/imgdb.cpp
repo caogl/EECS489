@@ -492,6 +492,12 @@ handleqry()
         break;
       }
     }
+    if(i==IMGDB_MAXFLOW)
+    {        
+      imsg.im_type=NETIMG_EFULL;
+      sendimsg(sd, &qhost, &imsg);
+      return(1);     
+    }
 
     /* Toggle the "started" member variable to on (1) if minflow number
      * of flows have arrived or total reserved rate is at link capacity
