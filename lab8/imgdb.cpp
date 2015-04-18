@@ -479,9 +479,15 @@ handleqry()
     {
       if(!flow[i].in_use && iqry.iq_frate + rsvdrate <= linkrate)
       {
+        flow[i].init(sd, &qhost, &iqry, &imsg, currFi);
+        if(imsg.im_type==NETIMG_NFOUND)
+        {   
+          sendimsg(sd, &qhost, &imsg);
+          return(1);
+        }
+
         nflow++;
         rsvdrate += iqry.iq_frate;
-        flow[i].init(sd, &qhost, &iqry, &imsg, currFi);
         fprintf(stderr, "imgdb:handleqry: flow %d added, flow rate: %d, reserved link rate: %d\n", i, iqry.iq_frate, rsvdrate);
         break;
       }
