@@ -1,0 +1,196 @@
+<html>
+<head>
+  <title>EECS 489 Lab 8: Weighted Fair Queueing</title>
+</head>
+<body>
+
+<h1>EECS 489 Lab 8: Weighted Fair Queueing</h1>
+<b>This assignment is due on <font color=red>Wednesday,
+15 April 2015, 10 pm</font>.</b></p>
+
+<center>
+
+</center>
+
+<h2>Introduction</h2>
+
+One of the main tool to provide resource isolation, either for
+performance guarantee or infrastructure virtualization, is <em>fair
+queueing</em> (FQ), otherwise known as <em>generalized processing
+sharing</em> (GPS).  In this lab, we implement a simplified weighted
+fair queueing (WFQ) scheduler.  The main simplification we make is to
+assume that once a flow (or job) has started, the flow never goes
+idle.  If a flow can go idle, when it resumes service, we would need
+to compute the scheduling round at which service is resumed.  This
+computation is complicated by the arrival and departure of other flows
+during this flow's idle time.  Everytime a flow arrives or departs, it
+stretches or shrinks the duration of a scheduling round by changing
+the total allocated resources.  Hence to compute the round at which a
+flow resumes service we would have to keep track of the changes in
+scheduling round during its idle time.  This is known as "round
+catchup" in the literature.  By assuming that a flow doesn't go idle,
+we avoid doing "round catchup" in our implementation.</p>
+
+Another assumption we make is that once a packet starts transmission
+we do not pre-empt it to serve another newly arriving packet with a
+smaller finish time.  This assumption implies that we account for
+flow arrivals and departures only between packet transmissions.</p>
+
+We continue to build on our UDP-based client-server code.  This code
+base does not implement flow control, reliable delivery, nor rate
+control.  As usual, you're provided with a skeleton code and a
+reference Linux binary executable of the server called <tt>refwfqdb</tt>.
+The client is the same one used in Lab7.  The implementation of WFQ
+requires you to modify only the server code.  The provided
+<tt>Makefile</tt> builds <tt>netimg</tt> and <tt>imgdb</tt>. You can
+download the <a
+href=https://mfile.umich.edu/?path=/afs/umich.edu/class/eecs489/w15/FILES/lab8.tgz>
+support code</a> from the Course Folder and copy the files to your
+working folder for Lab7 (you may want to save a copy of your Lab7
+<tt>Makefile</tt>, <tt>imgdb.h</tt>, and <tt>imgdb.cpp</tt> before
+overwriting them with the ones for this lab). As usual, you can search for
+the string "YOUR CODE HERE" in the code to find places where your code
+must go.  You may also want to consult the lecture notes on <a
+href=http://web.eecs.umich.edu/~sugih/courses/eecs489/lectures/34-QoS+TBF+WFQ.pdf>WFQ</a> and <a
+href=http://web.eecs.umich.edu/~sugih/courses/eecs489/lectures/34-PA4.pdf>PA4 walk-through</a>.  Your implementation of the server <b>must</b> 
+interoperate with the provided client.<p/>
+
+Recall that the client's <tt>-r</tt> command-line option is used to
+specify the flow's rate, in Kbps.  The server in this lab takes two
+command-line options <tt>-l</tt> and <tt>-g</tt>.  The <tt>-l</tt>
+option allows you to specify the server's link rate, in Mbps, ranging
+from 1 to 10.  The <tt>-g</tt> option allows you to specify the
+minimum number of flows that must be initiated before transmission
+begins.  Transmission will not start unless either this many number of
+flows have been initiated or if total reserved rate has reached link
+capacity.  We call this "gated start".  Without gated start, a flow
+could easily finish transmission before we could start a second one.
+The default values of the command line options can be found in
+<tt>netimg.h</tt></p>
+
+<h2>Weighted Fair Queueing (WFQ)</h2>
+
+Your first task is to complete the code in <tt>imgdb::handleqry()</tt> to
+add a new flow.  When a new flow is to be added, first look for an
+empty slot in the flow table to hold the flow.  Also check that
+the link still have enough capacity to serve the flow's reserved rate.
+If the new flow cannot be accommodated, send back to the client an
+<tt>imsg_t</tt> packet with <tt>im_type</tt> set to
+<tt>NETIMG_EFULL</tt>.  Otherwise, increment the flow count and total
+reserved rate of the scheduler and call <tt>Flow::init()</tt> to
+initialize the flow.  This task should take about 7 lines of code.</p>
+
+To send a packet, you first compute the finish time of each flow's
+next segment.  Complete the 2-line computation for next finish time in
+<tt>Flow::nextFi()</tt> (Task 2).  [To avoid unnecessary arithmetic,
+we can assume that the finish times computed are multiplied by 128
+(1024/8), i.e., the segment size can be in bytes instead of Kbits.]
+Then determine, in <tt>imgdb::sendpkt()</tt>, the flow with the
+smallest next finish time and call <tt>Flow::sendpkt()</tt> on the
+flow to send the next packet (Task 3).  This task should take about 10
+lines of code.</p>
+
+Your last task (Task 4) is to call <tt>Flow::done()</tt> when the flow
+has finished sending, as indicated by the return value of
+<tt>Flow::sendpkt()</tt>. When a flow has finished sending, decrement
+the scheduler's flow count and deduct the flow's reserved rate from
+the scheduler's total reserved rate.  This is a 2-line task for a
+total of about 20 lines of code for this whole lab.</p>
+
+<h2>Testing Your Code</h2>
+
+Unfortunately you may not always be able to see the effect of the
+scheduling order on the displayed images.  You would have to rely on
+the transmission log instead. The code for logging packet transmission
+is part of the support code that is provided to you.  Do not modify
+this code.</p>
+
+Run <tt>imgdb</tt> without any command line argument, which starts it
+with the default link rate of 10 Mbps and minimum flow of 2.  Then run
+two instances of <tt>netimg</tt> on two different shells/windows:<p/>
+<code>
+% netimg -s localhost:&lt;port&gt; -q ShipatSea.tga -r 256<br>
+% netimg -s localhost:&lt;port&gt; -q BlueMarble2004-08.tga -m 8192 -r 1024
+</code><p/>
+The two transmissions should complete about the same time (a few
+hundred microseconds apart) with the BlueMarble flow (<tt>flow 1</tt>)
+completing before the ShipatSea flow (<tt>flow 0</tt>).  Observing the
+transmission log, you'll see that multiple BlueMarble flow's packets
+are sent for each ShipatSea flow's.  (The display of the two
+instances of <tt>netimg</tt> may be on top of each other; drag the top
+image display window aside to view the other display window.)<p/>
+
+After quitting the two instances of <tt>netimg</tt> (you can leave the
+<tt>imgdb</tt> running), start two new instances of <tt>netimg</tt>:<p/>
+<code>
+% netimg -s localhost:&lt;port&gt; -q ShipatSea.tga -r 128<br>
+% netimg -s localhost:&lt;port&gt; -q BlueMarble2004-08.tga -m 8192 -r 128
+</code><p/>
+You should see the BlueMarble flow completing much later (well, by a
+millisecond or so) than the ShipatSea flow and that multiple ShipatSea
+flow's packets are sent for each BlueMarble flow's.<p/>
+
+<h2>Submission Instructions</h2>
+
+Do NOT use any libraries or compiler options not already used in the
+provided <tt>Makefile</tt>, to ensure that we will be able to build
+your code for grading.  If we can't compile your code, you will be
+heavily penalized.<p/>
+
+<p><font color=red>Test your compilation on CAEN eecs489 hosts!</font>
+Your submission must compile and run <b>without</b> errors on CAEN
+eecs489 hosts using the provided <tt>Makefile</tt>, unmodified. 
+Your server must interoperate with the provided client code.<p/>
+
+Your "<em>Lab8 files</em>" should comprise only your <tt>imgdb.cpp</tt>.<p/>
+
+<p>To turn in your Lab8:
+<ol>
+
+<li> Submit the SHA1's of your <em>Lab8 files</em> on the CTools <a
+     href=https://ctools.umich.edu/portal/site/6d537cb3-fad4-44da-bec9-bcf44cc21118/page/633b70a2-1474-44eb-87fa-5a113a3a1268>Assignments</a>
+     page. (If the URL doesn't work for you, just click the
+     "Assignments" item on the left menu of the CTools page for EECS
+     489.) Once you've submitted your SHA1's, <font color=red>don't make
+     any more changes to the files</font>, or your SHA1's will become
+     invalid.
+
+  <li> Upload your <em>Lab7 files</em> by pointing your web browser to
+     <a
+     href=https://mfile.umich.edu/?path=/afs/umich.edu/class/eecs487/w15/FOLDERS>Course
+     folder</a> and navigate to your <tt>lab8</tt> folder under your
+     uniqname.  Or you can <tt>scp</tt> the files to your
+     <tt>lab8</tt> folder on IFS:
+     <tt>/afs/umich.edu/class/eecs487/w15/FOLDERS/&lt;uniqname&gt;/lab8/</tt>.<br>
+     This path is accessible from any machine you've logged into using
+     your ITCS (<code>umich.edu</code>) password. Please report any
+     problems to ITCS.
+
+<li> <font color=red>Keep your own backup copy!</font> Don't make any
+     more changes to the files once you've submitted your final
+     SHA1's.
+
+</ol>
+
+<p>The timestamp on your SHA1 submission on CTools' Assignments page
+will be your time of submission.  If this is past the deadline, your
+submission will be considered late.  You are allowed multiple
+"submissions" without late-policy implications as long as you respect
+the deadline.</p>
+
+Do NOT turn in an archival (<tt>.zip</tt> or <tt>.tgz</tt>) file,
+instead please turn in your solution files individually.  <font
+color=red>Turn in ONLY the files you have modified.</font> Do not turn
+in support code we provided that you haven't modified.  <font
+color=red>Do not turn in any binary files (object files, executables,
+or images) with your assignment.</font><p/>
+
+<p>Do <font color=red>remove</font> all <tt>printf()</tt>'s or
+<tt>cout</tt>'s and <tt>cerr</tt>'s and any other logging statements
+you've added for debugging purposes.  You should debug using a
+debugger, not with <tt>printf()</tt>'s.  If we can't understand the
+output of your code, you will get zero point.</p>
+
+</body>
+</html>
+
