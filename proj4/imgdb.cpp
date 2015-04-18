@@ -472,19 +472,22 @@ sendpkt()
   int done = 0;
 
   /* pick next client to send packet and send with sleep*/
+  float temp;
   for(int i=0; i<IMGDB_MAXFLOW; i++)
   {
-    if(WFQ[i].in_use && (fd==IMGDB_MAXFLOW || currFi>WFQ[i].nextFi((float)linkrateWFQ/rsvdrate, 0)))
+    temp=WFQ[i].nextFi((float)linkrateWFQ/rsvdrate, 0);
+    if(WFQ[i].in_use && (fd==IMGDB_MAXFLOW || currFi>temp))
     {
       fd=i;
-      currFi=WFQ[i].nextFi((float)linkrateWFQ/rsvdrate, 0);
+      currFi=temp;
     }
   }
 
-  if(FIFOQ.in_use && (fd==IMGDB_MAXFLOW || currFi>FIFOQ.nextFi((float)linkrateWFQ/rsvdrate, 1)))
+  temp=FIFOQ.nextFi((float)linkrateWFQ/rsvdrate, 1);
+  if(FIFOQ.in_use && (fd==IMGDB_MAXFLOW || currFi>temp))
   {
     fd=-1;
-    currFi=FIFOQ.nextFi((float)linkrateWFQ/rsvdrate, 1);
+    currFi=temp;
     done=FIFOQ.sendpkt(sd, fd, currFi);
   }
   else
