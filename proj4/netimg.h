@@ -40,7 +40,7 @@
 
 #define NETIMG_MAXWIN    255   // 2^8 -1
 #define NETIMG_MINWIN      4
-#define NETIMG_RCVWIN    150
+#define NETIMG_RCVWIN     10
 #define NETIMG_UDPIP      28   // 20 bytes IP, 8 bytes UDP headers
 #define NETIMG_MSS      3072
 #define NETIMG_MINSS     264   // sizeof(iqry_t)

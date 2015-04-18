@@ -33,11 +33,12 @@
 
 #define IMGDB_BPTOK     512   // bytes per token
 
-#define IMGDB_MINFLOW           2   // minimum number of flows
+#define IMGDB_MINFLOW           1   // minimum number of flows
 #define IMGDB_MAXFLOW          20   // maximum number of flows
 #define IMGDB_LRATE         10240   // link rate, in Kbps
 #define IMGDB_MINLRATE          1   // minimum link rate, in Mbps
 #define IMGDB_MAXLRATE         10   // maximum link rate, in Mbps
+#define IMGDB_FRATE           0.5   // default fraction of link for WFQ
 
 class Flow {
   LTGA curimg;
@@ -47,13 +48,11 @@ class Flow {
 
   struct sockaddr_in client;
 
-  unsigned short mss;     // receiver's maximum segment size, in bytes
-  unsigned short frate;   // flow rate, in Kbps
-
   unsigned short datasize;
   int segsize;
 
   float Fi;               // finish time of last pkt sent
+  float duration;         // the duration needed to send next segment
 
   ihdr_t hdr;
   struct msghdr msg;
@@ -61,14 +60,26 @@ class Flow {
 
   char readimg(char *imgname, int verbose);
   double marshall_imsg(imsg_t *imsg);
+
+  unsigned short mss;     // receiver's maximum segment size, in bytes
+
+  // used for FIFO with TBF
+  float bsize; // bucket size, in number of tokens
+  float trate; // token generation rate, in tokens/sec
+  float incre;
+  float bavail; // the available token number in the bucket
+  float bpseg; // the token number needed per segment, excluding headers
+
 public:
   int in_use;             // 1: in use; 0: not
   struct timeval start;   // flow creation wall-clock time
 
+  unsigned short frate;   // flow rate, in Kbps
+
   Flow() { in_use = 0; }
   void init(int sd, struct sockaddr_in *qhost,
-            iqry_t *iqry, imsg_t *imsg, float currFi);
-  float nextFi(float multiplier);
+            iqry_t *iqry, imsg_t *imsg, float currFi, unsigned short linkrateFIFO);
+  float nextFi(float multiplier, bool TBF);
   int sendpkt(int sd, int fd, float currFi);
   /* Flow::done: set flow to not "in_use" and return the flow's
      reserved rate to be deducted from total reserved rate. */
@@ -80,15 +91,13 @@ class imgdb {
   struct sockaddr_in self;
   char sname[NETIMG_MAXFNAME];
 
-  Flow flow[IMGDB_MAXFLOW];
-  unsigned short rsvdrate;  // reserved rate, in Kbps
-  unsigned short linkrate;  // in Kbps
-  float currFi;             // current finish time
+  Flow WFQ[IMGDB_MAXFLOW];
+  Flow FIFOQ;
 
-  /*
-  float bsize; // bucket size, in number of tokens
-  float trate; // token generation rate, in tokens/sec
-  */
+  unsigned short rsvdrate;  // reserved rate by WFQ flows, in Kbps
+  unsigned short linkrateWFQ;  // in Kbps
+  unsigned short linkrateFIFO; // in Kbps
+  float currFi;             // current finish time
 
   // to implement gated transmission start
   short minflow;  // number of flows to trigger gated start

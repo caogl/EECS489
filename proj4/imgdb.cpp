@@ -20,10 +20,12 @@
 #include <stdio.h>         // fprintf(), perror(), fflush()
 #include <stdlib.h>        // atoi(), random()
 #include <assert.h>        // assert()
+#include <math.h>
 #include <limits.h>        // LONG_MAX, INT_MAX
 #include <errno.h>         // errno
 #include <iostream>
 using namespace std;
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>      // socklen_t
@@ -116,26 +118,9 @@ marshall_imsg(imsg_t *imsg)
   return((double) (imsg->im_width*imsg->im_height*imsg->im_depth));
 }
 
-/*
- * Flow::init
- * initialize flow by:
- * - indicating that flow is "in_use"
- * - loading and initializing image by calling Flow::readimg()
- *   and Flow::marshall_imsg(), update imsg->im_type accordingly.
- *   Also initialize member variables "ip" and "snd_next"
- * - initialize "mss" and "datasize", ensure that socket send
- *   buffer is at least mss size
- * - set flow's reserved rate "frate" to client's specification
- * - initial flow finish time is current global minimum finish time
- * - populate a struct msghdr for sending chunks of image
- * - save current system time as flow start time.  For gated start,
- *   this may be updated later with actual start time.
- * Assume that all fields in *iqry are already in host-byte order.
- * Leave all fields in *imsg in host-byte order also.
-*/
+
 void Flow::
-init(int sd, struct sockaddr_in *qhost, iqry_t *iqry,
-     imsg_t *imsg, float currFi)
+init(int sd, struct sockaddr_in *qhost, iqry_t *iqry, imsg_t *imsg, float currFi, unsigned short linkrateFIFO)
 {
   int err, usable;
   socklen_t optlen;
@@ -143,8 +128,8 @@ init(int sd, struct sockaddr_in *qhost, iqry_t *iqry,
 
   imsg->im_type = readimg(iqry->iq_name, 1);
   
-  if (imsg->im_type == NETIMG_FOUND) {
-
+  if (imsg->im_type == NETIMG_FOUND) 
+  {
     // flow is in use
     in_use = 1;
     
@@ -174,13 +159,6 @@ init(int sd, struct sockaddr_in *qhost, iqry_t *iqry,
     frate = iqry->iq_frate;
     Fi = currFi;
     
-    /* 
-     * Populate a struct msghdr with information of the destination client,
-     * a pointer to a struct iovec array.  The iovec array should be of size
-     * NETIMG_NUMIOV.  The first entry of the iovec should be initialized
-     * to point to an ihdr_t, which should be re-used for each chunk of data
-     * to be sent.
-     */
     client = *qhost;
     msg.msg_name = &client;
     msg.msg_namelen = sizeof(sockaddr_in);
@@ -194,6 +172,16 @@ init(int sd, struct sockaddr_in *qhost, iqry_t *iqry,
     hdr.ih_type = NETIMG_DATA;
     iov[0].iov_base = &hdr;
     iov[0].iov_len = sizeof(ihdr_t);
+
+    // if the flow is FIFO with TBF
+    if(!frate)
+    {
+      frate=linkrateFIFO;
+      bsize=ceil((double)(mss-sizeof(ihdr_t))*(iqry->iq_rwnd)/IMGDB_BPTOK);
+      trate=(frate*1024)/(8*IMGDB_BPTOK);
+      bavail=0; // the available token number in the bucket
+      bpseg=(float)(mss-sizeof(ihdr_t))/IMGDB_BPTOK; // the token number needed per segment, excluding headers
+    }
     
     /* for non-gated flow starts */
     gettimeofday(&start, NULL);
@@ -202,52 +190,36 @@ init(int sd, struct sockaddr_in *qhost, iqry_t *iqry,
   return;
 }
 
-/*
- * Flow::nextFi: compute the flow's next finish time
- * from the size of the current segment, the flow's
- * reserved rate, and the multiplier passed in.
- * The multiplier is linkrate/total_reserved_rate.
- * To avoid unnecessary arithmetic, you can assume that
- * the Fi's are multiplied by 128 (or 1024/8) so you
- * can keep the segment size in bytes instead of Kbits.
- * Since we're comparing relative finish times (Fi's),
- * the unit doesn't really matter, as long as the ordering
- * is correct.
-*/
+
 float Flow::
-nextFi(float multiplier)
+nextFi(float multiplier, bool TBF)
 {
   /* size of this segment */
   segsize = imgsize - snd_next;
   segsize = segsize > datasize ? datasize : segsize;
 
-  /* Task 2: YOUR CODE HERE */
-  /* Replace the following return statement with your
-     computation of the next finish time as indicated above
-     and return the result instead. */
+  if(!TBF) // if WFQ flow
+  {
+    duration=segsize/(128*frate*multiplier);
+  }
+  else
+  {
+    if(bavail<bpseg)
+    {
+      incre=bpseg-bavail+((float)random()/INT_MAX)*bsize;
+      //bavail=min(bsize, bavail+incre);
+      duration=incre/trate;
+    }
+    else
+    {
+      duration=0;
+    }
+  }  
 
-  //float duration = segsize/((1024/8)*frate*multiplier);
-  float duration=segsize/(128*frate*multiplier);
-  return(duration+Fi);    
+  return (duration+Fi);  
 }
 
-/*
- * Flow::sendpkt:
- * Send the image contained in *image to the client
- * pointed to by *client. Send the image in
- * chunks of segsize, not to exceed mss, instead of
- * as one single image.
- * The argument "sd" is the socket to send packet out of.
- * The argument "fd" is the array index this flow occupies
- * on the flow table.  It is passed in here just so that we can
- * log it with the packet transmission message.
- * Update the flow's finish time to the current global
- * minimum finish time passed in as "currFi".
- *
- * Return 0 if there's more of the image to send.
- * Return 1 if we've finished sending image.
- * Terminate process upon encountering any error.
-*/
+
 int Flow::
 sendpkt(int sd, int fd, float currFi)
 {
@@ -257,19 +229,22 @@ sendpkt(int sd, int fd, float currFi)
   // global minimum finish time
   Fi = currFi;
 
-  /* 
-   * Send one segment of data of size segsize at each iteration.
-   * Point the second entry of the iovec to the correct offset
-   * from the start of the image.  Update the sequence number
-   * and size fields of the ihdr_t header to reflect the byte
-   * offset and size of the current chunk of data.  Send
-   * the segment off by calling sendmsg().
-   */
   iov[1].iov_base = ip+snd_next;
   iov[1].iov_len = segsize;
   hdr.ih_seqn = htonl(snd_next);
   hdr.ih_size = htons(segsize);
   
+  usleep(1000000*duration);  
+
+  if(fd==-1)
+  {    
+    if(bavail<bpseg)
+    {
+      bavail=min(bsize, bavail+incre);
+    }
+    bavail-=bpseg;
+  }
+
   bytes = sendmsg(sd, &msg, 0);
   net_assert((bytes < 0), "imgdb_sendimage: sendmsg");
   net_assert((bytes != (int)(segsize+sizeof(ihdr_t))), "Flow::sendpkt: sendmsg bytes");
@@ -287,9 +262,7 @@ sendpkt(int sd, int fd, float currFi)
 
 /*
  * imgdb_args: parses command line args.
- *
  * Returns 0 on success or 1 on failure.
- *
  * Nothing else is modified.
  */
 int imgdb::
@@ -303,10 +276,11 @@ args(int argc, char *argv[])
     return (1);
   }
 
-  linkrate = IMGDB_LRATE;
+  int linkrate = IMGDB_LRATE; // total link rate
+  float frate = IMGDB_FRATE; // fraction of link for WFQ
   minflow = IMGDB_MINFLOW;
 
-  while ((c = getopt(argc, argv, "l:g:")) != EOF) {
+  while ((c = getopt(argc, argv, "l:g:f:")) != EOF) {
     switch (c) {
     case 'l':
       arg = atoi(optarg);
@@ -322,12 +296,19 @@ args(int argc, char *argv[])
       }
       minflow = (short) arg;
       break;
+    case 'f':
+      frate = atof(optarg);
+      if (frate<0 || frate>1)
+        return (1);
+      break;
     default:
       return(1);
       break;
     }
   }
 
+  linkrateWFQ=frate*linkrate;  
+  linkrateFIFO=(1-frate)*linkrate;
   return (0);
 }
 
@@ -343,42 +324,24 @@ imgdb(int argc, char *argv[])
 
   // parse args, see the comments for imgdb::args()
   if (args(argc, argv)) {
-    fprintf(stderr, "Usage: %s [ -l <linkrate [1, 10 Mbps]> -g <minflow> ]\n", argv[0]); 
+    fprintf(stderr, "Usage: %s [ -l <linkrate [1, 10 Mbps]> -g <minflow> -f <frateWFQ>]\n", argv[0]); 
     exit(1);
   }
   
-  srandom(NETIMG_SEED+linkrate+minflow);
+  srandom(NETIMG_SEED+linkrateWFQ+linkrateFIFO+minflow);
 }
 
-/* 
- * recvqry: receives an iqry_t packet and stores the client's address
- * and port number in the qhost variable.  Checks that
- * the incoming iqry_t packet is of version NETIMG_VERS and of type
- * NETIMG_SYNQRY.
- *
- * If error encountered when receiving packet or if packet is of the
- * wrong version or type returns appropriate NETIMG error code.  The
- * receive is done non-blocking.  If the socket buffer is empty,
- * return NETIMG_EAGAIN. Otherwise returns 0.
- *
- * Nothing else is modified.
-*/
+
 char imgdb::
 recvqry(int sd, struct sockaddr_in *qhost, iqry_t *iqry)
 {
   int bytes;  // stores the return value of recvfrom()
-
-  /*
-   * Call recvfrom() to receive the iqry_t packet from
-   * qhost.  Store the client's address and port number in
-   * qhost and store the return value of
-   * recvfrom() in local variable "bytes".
-  */
   socklen_t len;
   
   len = sizeof(struct sockaddr_in);
   bytes = recvfrom(sd, iqry, sizeof(iqry_t), started ? MSG_DONTWAIT: 0,
                    (struct sockaddr *) qhost, &len);
+
   if (bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
     return (NETIMG_EAGAIN);
   }
@@ -399,14 +362,7 @@ recvqry(int sd, struct sockaddr_in *qhost, iqry_t *iqry)
   return(0);
 }
 
-/* imgdb::sendimsg:
- *
- * Prepares imsg for transmission: fills in im_vers and converts
- * integers to network byte order before transmission.  Note that
- * im_type is set by the caller and should not be modified.  Sends the
- * imsg packet to qhost using sendto().  Returns the return
- * value of sendto().  Nothing else is modified.
-*/
+
 void imgdb::
 sendimsg(int sd, struct sockaddr_in *qhost, imsg_t *imsg)
 {
@@ -425,30 +381,7 @@ sendimsg(int sd, struct sockaddr_in *qhost, imsg_t *imsg)
   return;
 }
 
-/*
- * imgdb::handleqry
- * Check for an iqry_t packet from client and set up a flow
- * if an iqry_t packet arrives.
- *
- * Once a flow arrives, look for the first empty slot in flow[] to
- * hold the new flow.  If an empty slot exists, check that we haven't
- * hit linkrate capacity.  We can only add a flow if there's enough
- * linkrate left over to accommodate the flow's reserved rate.  If a flow
- * cannot be admitted due to capacity limit, return an imsg_t packet
- * with im_type set to NETIMG_EFULL.
- *
- * Once a flow is admitted, increment flow count and total reserved
- * rate, then call Flow::init() to initialize the flow.  If the
- * queried image is found, Flow::init(), would update the imsg
- * response packet accordingly.
- * 
- * If minflow number of flows have arrived or total reserved rate is
- * at link capacity, toggle the "started" member variable to on (1)
- * and reset the start time of each flow to the current wall clock
- * time.
- * 
- * Finally send back the imsg_t response packet.
-*/
+
 int imgdb::
 handleqry()
 {
@@ -458,49 +391,66 @@ handleqry()
   struct sockaddr_in qhost;
   
   imsg.im_type = recvqry(sd, &qhost, &iqry);
-  if (!imsg.im_type) {
-    
+  if(!imsg.im_type) 
+  {
     iqry.iq_mss = (unsigned short) ntohs(iqry.iq_mss);
     iqry.iq_frate = (unsigned short) ntohs(iqry.iq_frate);
     
-    /* 
-     * Task 1: look for the first empty slot in flow[] to hold the new
-     * flow.  If an empty slot exists, check that we haven't hit
-     * linkrate capacity.  We can only add a flow if there's enough
-     * linkrate left over to accommodate the flow's reserved rate.
-     * Once a flow is admitted, increment flow count and total
-     * reserved rate, then call Flow::init() to initialize the flow.
-     * Flow::init() will update the imsg response packet accordingly.
-     * If a flow cannot be admitted due to capacity limit, return an
-     * imsg_t packet with im_type set to NETIMG_EFULL.
-     */
-    /* Task 1: YOUR CODE HERE */
-    for(i = 0; i<IMGDB_MAXFLOW; i++)
+    if(!iqry.iq_frate) // FIFO client
     {
-      if(!flow[i].in_use && iqry.iq_frate + rsvdrate <= linkrate)
+      // if already an active FIFO flow, do not accept new FIFO client flow
+      if(FIFOQ.in_use) 
       {
-        nflow++;
-        rsvdrate += iqry.iq_frate;
-        flow[i].init(sd, &qhost, &iqry, &imsg, currFi);
-        fprintf(stderr, "imgdb:handleqry: flow %d added, flow rate: %d, reserved link rate: %d\n", i, iqry.iq_frate, rsvdrate);
-        break;
+        imsg.im_type=NETIMG_EFULL;
+        sendimsg(sd, &qhost, &imsg);
+        return(1);        
+      }
+
+      FIFOQ.init(sd, &qhost, &iqry, &imsg, currFi, linkrateFIFO);
+      if(imsg.im_type==NETIMG_NFOUND)
+      {   
+        sendimsg(sd, &qhost, &imsg);
+        return(1);
+      }
+      nflow++;
+      fprintf(stderr, "imgdb:handleqry: flow %d added, flow rate: %d, reserved link rate: %d\n", -1, linkrateFIFO, linkrateFIFO);
+
+    }    
+    else
+    {
+      for(i = 0; i<IMGDB_MAXFLOW; i++)
+      {
+        if(!WFQ[i].in_use)
+        {
+          WFQ[i].init(sd, &qhost, &iqry, &imsg, currFi, 0);
+          if(imsg.im_type==NETIMG_NFOUND)
+          {   
+            sendimsg(sd, &qhost, &imsg);
+            return(1);
+          }
+
+          nflow++;
+          rsvdrate += iqry.iq_frate;
+          fprintf(stderr, "imgdb:handleqry: flow %d added, flow rate: %d, reserved link rate: %d\n", i, iqry.iq_frate, rsvdrate);
+          break;
+        }
+      }
+      if(i==IMGDB_MAXFLOW)
+      {        
+        imsg.im_type=NETIMG_EFULL;
+        sendimsg(sd, &qhost, &imsg);
+        return(1);     
       }
     }
 
-    /* Toggle the "started" member variable to on (1) if minflow number
-     * of flows have arrived or total reserved rate is at link capacity
-     * and set the start time of each flow to the current wall clock time.
-     */
-    if (!started && (nflow >= minflow || rsvdrate >= linkrate))
+    if(!started && nflow>=minflow)
     {
       started = 1;
       for (i = 0; i <IMGDB_MAXFLOW; i++) 
-      {
-        if(flow[i].in_use)
-          gettimeofday(&flow[i].start, NULL);
-      }
+        if(WFQ[i].in_use)
+          gettimeofday(&WFQ[i].start, NULL);
+      gettimeofday(&FIFOQ.start, NULL);
     }
-
   }
  
   if(imsg.im_type != NETIMG_EAGAIN)
@@ -512,27 +462,7 @@ handleqry()
   return(0);
 }
 
-/*
- * imgdb::sendpkt:
- *
- * First compute the next finish time of each flow given current total
- * reserved rate of the system by calling Flow::nextFi() (Task 2) on
- * each flow.
- *
- * Task 3: Determine the minimum finish time and which flow has this
- * minimum finish time. Set the current global minimum finish time to
- * be this minimum finish time.
- *
- * Send out the packet with the minimum finish time by calling
- * Flow::sendpkt() on the flow.  Save the return value of Flow::sendpkt()
- * in the local "done" variable.  If the flow is finished sending,
- * Flow::sendpkt() will return 1.
- *
- * Task 4: When done sending, remove flow from flow[] by calling
- * Flow::done().  Deduct the flow's reserved rate (returned by
- * Flow::done()) from the total reserved rate, and decrement the flow
- * count.
- */
+
 void imgdb::
 sendpkt()
 {
@@ -541,44 +471,58 @@ sendpkt()
   int secs, usecs;
   int done = 0;
 
-  /* Task 3: YOUR CODE HERE */
-  for (int i = 0; i <IMGDB_MAXFLOW; i++)
+  /* pick next client to send packet and send with sleep*/
+  for(int i=0; i<IMGDB_MAXFLOW; i++)
   {
-    if(flow[i].in_use && (fd==IMGDB_MAXFLOW || currFi>flow[i].nextFi((float)linkrate/rsvdrate)))
+    if(WFQ[i].in_use && (fd==IMGDB_MAXFLOW || currFi>WFQ[i].nextFi((float)linkrateWFQ/rsvdrate, 0)))
     {
       fd=i;
-      currFi=flow[i].nextFi((float)linkrate/rsvdrate);
+      currFi=WFQ[i].nextFi((float)linkrateWFQ/rsvdrate, 0);
     }
   }
-  done = flow[fd].sendpkt(sd, fd, currFi);
 
-  if (done) {
+  if(FIFOQ.in_use && (fd==IMGDB_MAXFLOW || currFi>FIFOQ.nextFi((float)linkrateWFQ/rsvdrate, 1)))
+  {
+    fd=-1;
+    currFi=FIFOQ.nextFi((float)linkrateWFQ/rsvdrate, 1);
+    done=FIFOQ.sendpkt(sd, fd, currFi);
+  }
+  else
+    done=WFQ[fd].sendpkt(sd, fd, currFi);
 
-    /* Task 4: When done sending, remove flow from flow[] by calling
-     * Flow::done().  Deduct the flow's reserved rate (returned by
-     * Flow::done()) from the total reserved rate, and decrement the
-     * flow count.
-    */
-    /* Task 4: YOUR CODE HERE */
-    rsvdrate-=flow[fd].done();
-    nflow--;
-
-    if (nflow <= 0) {
-      started = 0;
-    }
-
+  if(done) 
+  {
     gettimeofday(&end, NULL);
     /* compute elapsed time */
-    usecs = USECSPERSEC-flow[fd].start.tv_usec+end.tv_usec;
-    secs = end.tv_sec - flow[fd].start.tv_sec - 1;
+    if(fd!=-1)
+    {
+      usecs = USECSPERSEC-WFQ[fd].start.tv_usec+end.tv_usec;
+      secs = end.tv_sec - WFQ[fd].start.tv_sec - 1;
+    }
+    else
+    {
+      usecs = USECSPERSEC-FIFOQ.start.tv_usec+end.tv_usec;
+      secs = end.tv_sec-FIFOQ.start.tv_sec - 1;
+    }
+
     if (usecs > USECSPERSEC) {
       secs++;
       usecs -= USECSPERSEC;
     }
     
-    fprintf(stderr,
-            "imgdb::sendpkt: flow %d done, elapsed time (m:s:ms:us): %d:%d:%d:%d, reserved link rate: %d\n",
-            fd, secs/60, secs%60, usecs/1000, usecs%1000, rsvdrate);
+    if(fd==-1)
+      fprintf(stderr, "imgdb::sendpkt: flow %d done, elapsed time (m:s:ms:us): %d:%d:%d:%d, reserved link rate: %d\n", fd, secs/60, secs%60, usecs/1000, usecs%1000, linkrateFIFO);
+    else
+      fprintf(stderr, "imgdb::sendpkt: flow %d done, elapsed time (m:s:ms:us): %d:%d:%d:%d, reserved link rate: %d\n", fd, secs/60, secs%60, usecs/1000, usecs%1000, (int)(WFQ[fd].frate*((float)linkrateWFQ/rsvdrate)));
+
+    if(fd!=-1)
+      rsvdrate-=WFQ[fd].done();
+    else
+      FIFOQ.done();
+    nflow--;
+
+    if (nflow <= 0) 
+      started = 0;
   }
 
   return;
